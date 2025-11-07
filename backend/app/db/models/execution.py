@@ -102,8 +102,8 @@ class PipelineExecution(Base):
     )
 
     # Relationships
-    # pipeline = relationship("Pipeline", back_populates="executions")
-    # triggered_by_user = relationship("User")
+    pipeline = relationship("Pipeline", back_populates="executions")
+    triggered_by_user = relationship("User")
 
     def __repr__(self) -> str:
         return f"<PipelineExecution {self.id} ({self.status})>"

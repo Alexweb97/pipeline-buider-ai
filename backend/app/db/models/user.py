@@ -70,9 +70,9 @@ class User(Base):
         nullable=True,
     )
 
-    # Relationships (to be implemented)
-    # pipelines = relationship("Pipeline", back_populates="creator")
-    # connections = relationship("Connection", back_populates="creator")
+    # Relationships
+    pipelines = relationship("Pipeline", back_populates="creator")
+    connections = relationship("Connection", back_populates="creator")
 
     def __repr__(self) -> str:
         return f"<User {self.username} ({self.email})>"

@@ -79,10 +79,10 @@ class Pipeline(Base):
         nullable=False,
     )
 
-    # Relationships (to be implemented)
-    # creator = relationship("User", back_populates="pipelines")
-    # organization = relationship("Organization", back_populates="pipelines")
-    # executions = relationship("PipelineExecution", back_populates="pipeline")
+    # Relationships
+    creator = relationship("User", back_populates="pipelines")
+    organization = relationship("Organization", back_populates="pipelines")
+    executions = relationship("PipelineExecution", back_populates="pipeline")
 
     def __repr__(self) -> str:
         return f"<Pipeline {self.name} ({self.status})>"
