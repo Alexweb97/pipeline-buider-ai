@@ -22,7 +22,7 @@ Plateforme low-code/no-code permettant de concevoir, configurer et exécuter des
 - Vite comme build tool
 
 ### Backend
-- FastAPI (Python 3.11+)
+- FastAPI (Python 3.14)
 - PostgreSQL 15+ avec TimescaleDB
 - Apache Airflow pour l'orchestration
 - Redis pour le cache et les tâches asynchrones
@@ -39,14 +39,14 @@ Plateforme low-code/no-code permettant de concevoir, configurer et exécuter des
 
 - Docker & Docker Compose
 - Node.js 18+ (pour développement frontend)
-- Python 3.11+ (pour développement backend)
+- Python 3.14 (pour développement backend)
 - Git
 
 ### 1. Cloner le Projet
 
 ```bash
-git clone https://github.com/votre-organisation/logidata_ai.git
-cd logidata_ai
+git clone https://github.com/Alexweb97/pipeline-buider-ai.git
+cd pipeline-builder-ai
 ```
 
 ### 2. Configuration
@@ -83,7 +83,7 @@ docker-compose exec backend alembic upgrade head
 docker-compose exec backend python scripts/create_admin.py
 ```
 
-### 5. Accéder à l'Application
+### 5. Accéder à l'Application (developpement)
 
 - **Frontend**: http://localhost:3000
 - **API Backend**: http://localhost:8000
@@ -308,12 +308,7 @@ Pour plus de détails, consultez [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
 - [Project Structure](./PROJECT_STRUCTURE.md) - Structure du projet
 - [API Documentation](./docs/API.md) - Documentation de l'API REST
 - [Module Development](./docs/MODULES.md) - Créer des modules personnalisés
-- [Security Guidelines](./docs/SECURITY.md) - Bonnes pratiques de sécurité
-- [Deployment Guide](./docs/DEPLOYMENT.md) - Guide de déploiement
 
-## Contribution
-
-Nous accueillons les contributions! Consultez [CONTRIBUTING.md](./docs/CONTRIBUTING.md) pour commencer.
 
 ### Workflow
 
@@ -332,9 +327,9 @@ Nous accueillons les contributions! Consultez [CONTRIBUTING.md](./docs/CONTRIBUT
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/votre-organisation/logidata_ai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/votre-organisation/logidata_ai/discussions)
-- **Email**: support@logidata.ai
+- **Issues**: [GitHub Issues](https://github.com/Alexweb97/pipeline-buider-ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Alexweb97/pipeline-buider-ai/discussions)
+- **Email**: alexandretoto.dev@gmail.com
 
 ## Roadmap
 
