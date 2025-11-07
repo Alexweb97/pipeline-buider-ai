@@ -1,46 +1,61 @@
 # ETL/ELT Builder - Plateforme Modulaire de Pipelines de Données
 
-Plateforme low-code/no-code permettant de concevoir, configurer et exécuter des pipelines ETL/ELT via une interface visuelle drag & drop, avec orchestration intelligente et intégration IA.
+**Plateforme low-code/no-code** permettant de concevoir, configurer et exécuter des pipelines ETL/ELT via une interface visuelle **drag & drop**, avec orchestration intelligente et intégration IA.
 
-## Caractéristiques Principales
+![ETL/ELT Builder Demo](https://via.placeholder.com/800x400?text=ETL%2FELT+Builder+Demo) *(Remplace par une capture d'écran ou un GIF de ton application)*
 
-- **Interface Drag & Drop**: Canvas interactif inspiré de n8n et Databricks
-- **Modules Extensibles**: Extracteurs, transformateurs, et chargeurs pour diverses sources
-- **Orchestration Intelligente**: Powered by Apache Airflow
-- **IA Intégrée**: Suggestions automatiques de transformations
-- **Prévisualisation en Temps Réel**: Visualisation des données à chaque étape
-- **Monitoring Avancé**: Logs, métriques, et alertes en temps réel
-- **Conformité RGPD**: Chiffrement, anonymisation, et audit trail
+---
 
-## Stack Technologique
+## 🌟 Caractéristiques Principales
 
-### Frontend
-- React 18+ avec TypeScript
-- React Flow pour le drag & drop
-- Material-UI (MUI) pour les composants
-- Zustand pour le state management
-- Vite comme build tool
+| **Fonctionnalité**               | **Description**                                                                                     |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------|
+| **Interface Drag & Drop**         | Canvas interactif inspiré de **n8n** et **Databricks** pour une conception intuitive.               |
+| **Modules Extensibles**          | Extracteurs, transformateurs et chargeurs pour diverses sources (SQL, APIs, fichiers, etc.).       |
+| **Orchestration Intelligente**   | Moteur basé sur **Apache Airflow** pour planifier et exécuter les pipelines.                         |
+| **IA Intégrée**                  | Suggestions automatiques de transformations et optimisations.                                      |
+| **Prévisualisation en Temps Réel** | Visualisation des données à chaque étape du pipeline.                                             |
+| **Monitoring Avancé**            | Logs, métriques et alertes en temps réel avec **Prometheus & Grafana**.                            |
+| **Conformité RGPD**              | Chiffrement, anonymisation et audit trail pour les données sensibles.                               |
 
-### Backend
-- FastAPI (Python 3.14)
-- PostgreSQL 15+ avec TimescaleDB
-- Apache Airflow pour l'orchestration
-- Redis pour le cache et les tâches asynchrones
-- MinIO pour le stockage objet
+---
 
-### Infrastructure
+## 🛠 Stack Technologique
+
+### **Frontend**
+- **Framework** : [React 18+](https://reactjs.org/) avec [TypeScript](https://www.typescriptlang.org/)
+- **Drag & Drop** : [React Flow](https://reactflow.dev/)
+- **UI** : [Material-UI (MUI)](https://mui.com/)
+- **State Management** : [Zustand](https://github.com/pmndrs/zustand)
+- **Build Tool** : [Vite](https://vitejs.dev/)
+
+### **Backend**
+- **Framework** : [FastAPI](https://fastapi.tiangolo.com/) (Python 3.14)
+- **Base de Données** : [PostgreSQL 15+](https://www.postgresql.org/) avec [TimescaleDB](https://www.timescale.com/)
+- **Orchestration** : [Apache Airflow](https://airflow.apache.org/)
+- **Cache** : [Redis](https://redis.io/)
+- **Stockage** : [MinIO](https://min.io/)
+
+### **Infrastructure**
+- **Conteneurisation** : [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+- **Reverse Proxy** : [Nginx](https://www.nginx.com/)
+- **Monitoring** : [Prometheus](https://prometheus.io/) + [Grafana](https://grafana.com/)
+
+---
+
+## 🚀 Installation Rapide
+
+### **Prérequis**
 - Docker & Docker Compose
-- Nginx comme reverse proxy
-- Prometheus & Grafana pour le monitoring
-
-## Installation Rapide
-
-### Prérequis
-
-- Docker & Docker Compose
-- Node.js 18+ (pour développement frontend)
-- Python 3.14 (pour développement backend)
+- Node.js 18+ (pour le développement frontend)
+- Python 3.14 (pour le développement backend)
 - Git
+
+### **1. Cloner le Projet**
+```bash
+git clone https://github.com/Alexweb97/pipeline-builder-ai.git
+cd pipeline-builder-ai
+
 
 ### 1. Cloner le Projet
 
@@ -358,7 +373,7 @@ Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.
 
 ## Crédits
 
-Développé avec ❤️ par l'équipe LogiData AI.
+Développé avec ❤️ par Alexweb97.
 
 ### Technologies Utilisées
 
