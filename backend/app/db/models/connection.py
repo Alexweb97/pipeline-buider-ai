@@ -66,7 +66,7 @@ class Connection(Base):
     )  # success, failed
 
     # Relationships
-    # creator = relationship("User", back_populates="connections")
+    creator = relationship("User", back_populates="connections")
 
     def __repr__(self) -> str:
         return f"<Connection {self.name} ({self.type})>"
