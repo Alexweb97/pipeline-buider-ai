@@ -4,7 +4,7 @@ User Model
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import String, Boolean, DateTime
+from sqlalchemy import Integer, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -70,6 +70,18 @@ class User(Base):
         nullable=True,
     )
 
+    # Security fields for account lockout
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     # Relationships
     pipelines = relationship("Pipeline", back_populates="creator")
     connections = relationship("Connection", back_populates="creator")
@@ -87,3 +99,28 @@ class User(Base):
     def is_developer(self) -> bool:
         """Check if user is developer"""
         return self.role in ("admin", "developer")
+
+    @property
+    def is_locked(self) -> bool:
+        """Check if account is currently locked"""
+        if self.locked_until is None:
+            return False
+        return datetime.utcnow() < self.locked_until
+
+    def reset_login_attempts(self) -> None:
+        """Reset failed login attempts and unlock account"""
+        self.failed_login_attempts = 0
+        self.locked_until = None
+
+    def increment_failed_attempts(self, lockout_duration_minutes: int = 15) -> None:
+        """
+        Increment failed login attempts and lock account if threshold reached
+
+        Args:
+            lockout_duration_minutes: Duration to lock account in minutes
+        """
+        from datetime import timedelta
+
+        self.failed_login_attempts += 1
+        if self.failed_login_attempts >= 5:
+            self.locked_until = datetime.utcnow() + timedelta(minutes=lockout_duration_minutes)
