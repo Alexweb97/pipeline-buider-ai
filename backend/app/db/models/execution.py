@@ -1,8 +1,8 @@
 """
 Execution Model - Pipeline execution tracking
 """
-from typing import Optional
 from uuid import uuid4
+
 from sqlalchemy import String, Text, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,7 +28,7 @@ class PipelineExecution(Base):
         index=True,
     )
 
-    triggered_by: Mapped[Optional[UUID]] = mapped_column(
+    triggered_by: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id"),
         nullable=True,
@@ -47,17 +47,17 @@ class PipelineExecution(Base):
         nullable=False,
     )  # manual, scheduled, webhook
 
-    started_at: Mapped[Optional[str]] = mapped_column(
+    started_at: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
 
-    completed_at: Mapped[Optional[str]] = mapped_column(
+    completed_at: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
 
-    duration_seconds: Mapped[Optional[int]] = mapped_column(
+    duration_seconds: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
@@ -68,17 +68,17 @@ class PipelineExecution(Base):
         nullable=False,
     )
 
-    result: Mapped[Optional[dict]] = mapped_column(
+    result: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )
 
-    error_message: Mapped[Optional[str]] = mapped_column(
+    error_message: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-    error_trace: Mapped[Optional[str]] = mapped_column(
+    error_trace: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -95,7 +95,7 @@ class PipelineExecution(Base):
         nullable=False,
     )  # rows_processed, data_size, etc.
 
-    airflow_dag_run_id: Mapped[Optional[str]] = mapped_column(
+    airflow_dag_run_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         index=True,

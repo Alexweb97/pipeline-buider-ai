@@ -2,8 +2,8 @@
 User Model
 """
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
+
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -41,7 +41,7 @@ class User(Base):
         nullable=False,
     )
 
-    full_name: Mapped[Optional[str]] = mapped_column(
+    full_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
@@ -65,7 +65,7 @@ class User(Base):
         nullable=False,
     )
 
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(
+    last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
@@ -73,6 +73,7 @@ class User(Base):
     # Relationships
     pipelines = relationship("Pipeline", back_populates="creator")
     connections = relationship("Connection", back_populates="creator")
+    executions = relationship("PipelineExecution", foreign_keys="PipelineExecution.triggered_by", back_populates="triggered_by_user")
 
     def __repr__(self) -> str:
         return f"<User {self.username} ({self.email})>"
