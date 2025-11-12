@@ -33,7 +33,7 @@ RUN uv venv && \
     sqlalchemy alembic psycopg2-binary asyncpg \
     redis hiredis celery flower \
     apache-airflow-client requests \
-    python-jose[cryptography] passlib[bcrypt] python-dotenv cryptography \
+    python-jose[cryptography] passlib[bcrypt] python-dotenv cryptography slowapi \
     pandas polars numpy pyarrow \
     pymongo pymysql sqlalchemy-utils \
     minio boto3 \
@@ -72,7 +72,7 @@ RUN uv venv && \
     sqlalchemy alembic psycopg2-binary asyncpg \
     redis hiredis celery flower \
     apache-airflow-client requests \
-    python-jose[cryptography] passlib[bcrypt] python-dotenv cryptography \
+    python-jose[cryptography] passlib[bcrypt] python-dotenv cryptography slowapi \
     pandas polars numpy pyarrow \
     pymongo pymysql sqlalchemy-utils \
     minio boto3 \
