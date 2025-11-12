@@ -1,8 +1,8 @@
 """
 Connection Model - Database and API connections
 """
-from typing import Optional
 from uuid import uuid4
+
 from sqlalchemy import String, Text, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -33,7 +33,7 @@ class Connection(Base):
         nullable=False,
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -55,12 +55,12 @@ class Connection(Base):
         nullable=False,
     )
 
-    last_tested_at: Mapped[Optional[str]] = mapped_column(
+    last_tested_at: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
 
-    test_status: Mapped[Optional[str]] = mapped_column(
+    test_status: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )  # success, failed

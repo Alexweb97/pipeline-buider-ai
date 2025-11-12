@@ -1,8 +1,8 @@
 """
 Pipeline Model
 """
-from typing import Optional
 from uuid import uuid4
+
 from sqlalchemy import String, Text, Boolean, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -33,7 +33,7 @@ class Pipeline(Base):
         nullable=False,
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -49,7 +49,7 @@ class Pipeline(Base):
         nullable=False,
     )
 
-    schedule: Mapped[Optional[str]] = mapped_column(
+    schedule: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
@@ -81,7 +81,6 @@ class Pipeline(Base):
 
     # Relationships
     creator = relationship("User", back_populates="pipelines")
-    organization = relationship("Organization", back_populates="pipelines")
     executions = relationship("PipelineExecution", back_populates="pipeline")
 
     def __repr__(self) -> str:

@@ -1,8 +1,8 @@
 """
 Module Model - ETL module registry
 """
-from typing import Optional
 from uuid import uuid4
+
 from sqlalchemy import String, Text, Boolean, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,7 +33,7 @@ class Module(Base):
         nullable=False,
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -66,12 +66,12 @@ class Module(Base):
         nullable=False,
     )  # JSON Schema for module configuration
 
-    input_schema: Mapped[Optional[dict]] = mapped_column(
+    input_schema: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # Expected input data schema
 
-    output_schema: Mapped[Optional[dict]] = mapped_column(
+    output_schema: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )  # Expected output data schema
@@ -100,12 +100,12 @@ class Module(Base):
         nullable=False,
     )
 
-    icon: Mapped[Optional[str]] = mapped_column(
+    icon: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )  # Icon identifier for UI
 
-    documentation_url: Mapped[Optional[str]] = mapped_column(
+    documentation_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )
