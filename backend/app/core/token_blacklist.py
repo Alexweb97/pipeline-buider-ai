@@ -7,10 +7,41 @@ from redis import Redis
 
 from app.core.config import settings
 
-# Redis client for token blacklist
+# Parse Redis URL to extract connection details
+def parse_redis_url(url: str) -> dict:
+    """Parse Redis URL to extract host, port, password, and db"""
+    # Format: redis://:password@host:port/db
+    try:
+        if "@" in url:
+            # Extract password
+            password_part = url.split("://")[1].split("@")[0]
+            password = password_part.lstrip(":")
+            # Extract host and port
+            host_part = url.split("@")[1].split("/")[0]
+            host = host_part.split(":")[0]
+            port = int(host_part.split(":")[1]) if ":" in host_part else 6379
+        else:
+            password = None
+            host_part = url.split("://")[1].split("/")[0]
+            host = host_part.split(":")[0]
+            port = int(host_part.split(":")[1]) if ":" in host_part else 6379
+
+        # Extract db number
+        db = int(url.split("/")[-1]) if "/" in url else 0
+
+        return {"host": host, "port": port, "password": password, "db": db}
+    except Exception as e:
+        print(f"Error parsing Redis URL: {e}")
+        return {"host": "localhost", "port": 6379, "password": None, "db": 0}
+
+# Parse Redis connection details
+redis_config = parse_redis_url(settings.REDIS_URL)
+
+# Redis client for token blacklist (use separate DB 4 for blacklist)
 redis_client = Redis(
-    host=settings.REDIS_URL.split("@")[1].split(":")[0] if "@" in settings.REDIS_URL else "localhost",
-    port=6379,
+    host=redis_config["host"],
+    port=redis_config["port"],
+    password=redis_config["password"],
     db=4,  # Use separate DB for blacklist
     decode_responses=True,
 )

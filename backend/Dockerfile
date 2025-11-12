@@ -1,6 +1,6 @@
 # Multi-stage build for Python backend with uv
 
-FROM python:3.14-slim AS base
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -33,7 +33,7 @@ RUN uv venv && \
     sqlalchemy alembic psycopg2-binary asyncpg \
     redis hiredis celery flower \
     apache-airflow-client requests \
-    python-jose[cryptography] passlib[bcrypt] python-dotenv cryptography slowapi \
+    python-jose[cryptography] passlib[bcrypt] bcrypt==4.1.2 python-dotenv cryptography slowapi \
     pandas polars numpy pyarrow \
     pymongo pymysql sqlalchemy-utils \
     minio boto3 \
@@ -72,7 +72,7 @@ RUN uv venv && \
     sqlalchemy alembic psycopg2-binary asyncpg \
     redis hiredis celery flower \
     apache-airflow-client requests \
-    python-jose[cryptography] passlib[bcrypt] python-dotenv cryptography slowapi \
+    python-jose[cryptography] passlib[bcrypt] bcrypt==4.1.2 python-dotenv cryptography slowapi \
     pandas polars numpy pyarrow \
     pymongo pymysql sqlalchemy-utils \
     minio boto3 \

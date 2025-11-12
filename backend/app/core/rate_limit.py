@@ -13,9 +13,9 @@ limiter = Limiter(
 
 # Rate limit configurations
 RATE_LIMITS = {
-    "auth_login": "5/minute",  # Max 5 login attempts per minute
-    "auth_register": "3/hour",  # Max 3 registrations per hour
+    "auth_login": "10/minute",  # Max 10 login attempts per minute
+    "auth_register": "20/minute",  # Max 20 registrations per minute (increased for dev)
     "auth_refresh": "10/minute",  # Max 10 token refreshes per minute
-    "auth_password_reset": "3/hour",  # Max 3 password reset requests per hour
+    "auth_password_reset": "5/minute",  # Max 5 password reset requests per minute (increased for dev)
     "general": "100/minute",  # General API rate limit
 }

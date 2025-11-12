@@ -32,7 +32,11 @@ from app.schemas.user import (
     UserResponse,
 )
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
+
+# Precalculate a dummy password hash for timing attack prevention
+# This avoids the bcrypt 72-byte limit issue when hashing at request time
+DUMMY_PASSWORD_HASH = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU5KkXQ2x9HW"  # Hash of "dummy"
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -66,9 +70,12 @@ def register(
         # Log the registration attempt
         log_security_event(
             event_type="registration_duplicate",
+            description=f"Duplicate registration attempt for email: {user_data.email} or username: {user_data.username}",
+            severity="warning",
+            ip=request.client.host if request.client else "unknown",
             user_id=None,
-            ip_address=request.client.host if request.client else "unknown",
-            details={"attempted_email": user_data.email, "attempted_username": user_data.username},
+            attempted_email=user_data.email,
+            attempted_username=user_data.username,
         )
 
         # Generic error message to prevent user enumeration
@@ -96,10 +103,12 @@ def register(
     # Log successful registration
     log_auth_event(
         event_type="registration",
-        user_id=str(db_user.id),
-        ip_address=request.client.host if request.client else "unknown",
+        username=db_user.username,
+        ip=request.client.host if request.client else "unknown",
+        user_agent=request.headers.get("user-agent", "unknown"),
         success=True,
-        details={"username": db_user.username, "role": db_user.role},
+        user_id=str(db_user.id),
+        role=db_user.role,
     )
 
     return db_user
@@ -133,16 +142,18 @@ def login(
 
     # Timing attack prevention: Always verify password even if user doesn't exist
     if not user:
-        # Hash a dummy password to maintain constant timing
-        verify_password(credentials.password, hash_password("dummy_password_for_timing"))
+        # Verify against a precalculated dummy hash to maintain constant timing
+        verify_password(credentials.password, DUMMY_PASSWORD_HASH)
 
         # Log failed login attempt
         log_auth_event(
             event_type="login",
-            user_id=None,
-            ip_address=request.client.host if request.client else "unknown",
+            username=credentials.username,
+            ip=request.client.host if request.client else "unknown",
+            user_agent=request.headers.get("user-agent", "unknown"),
             success=False,
-            details={"username": credentials.username, "reason": "user_not_found"},
+            user_id=None,
+            reason="user_not_found",
         )
 
         raise HTTPException(
@@ -155,9 +166,12 @@ def login(
     if user.is_locked:
         log_security_event(
             event_type="login_locked_account",
+            description=f"Login attempt to locked account: {credentials.username}",
+            severity="warning",
+            ip=request.client.host if request.client else "unknown",
             user_id=str(user.id),
-            ip_address=request.client.host if request.client else "unknown",
-            details={"username": credentials.username, "locked_until": user.locked_until.isoformat()},
+            username=credentials.username,
+            locked_until=user.locked_until.isoformat() if user.locked_until else None,
         )
 
         raise HTTPException(
@@ -174,14 +188,13 @@ def login(
         # Log failed login attempt
         log_auth_event(
             event_type="login",
-            user_id=str(user.id),
-            ip_address=request.client.host if request.client else "unknown",
+            username=credentials.username,
+            ip=request.client.host if request.client else "unknown",
+            user_agent=request.headers.get("user-agent", "unknown"),
             success=False,
-            details={
-                "username": credentials.username,
-                "reason": "invalid_password",
-                "failed_attempts": user.failed_login_attempts,
-            },
+            user_id=str(user.id),
+            reason="invalid_password",
+            failed_attempts=user.failed_login_attempts,
         )
 
         raise HTTPException(
@@ -194,9 +207,11 @@ def login(
     if not user.is_active:
         log_security_event(
             event_type="login_inactive_account",
+            description=f"Login attempt to inactive account: {credentials.username}",
+            severity="warning",
+            ip=request.client.host if request.client else "unknown",
             user_id=str(user.id),
-            ip_address=request.client.host if request.client else "unknown",
-            details={"username": credentials.username},
+            username=credentials.username,
         )
 
         raise HTTPException(
@@ -221,10 +236,12 @@ def login(
     # Log successful login
     log_auth_event(
         event_type="login",
-        user_id=str(user.id),
-        ip_address=request.client.host if request.client else "unknown",
+        username=user.username,
+        ip=request.client.host if request.client else "unknown",
+        user_agent=request.headers.get("user-agent", "unknown"),
         success=True,
-        details={"username": user.username, "role": user.role},
+        user_id=str(user.id),
+        role=user.role,
     )
 
     return TokenResponse(
@@ -278,9 +295,11 @@ def refresh_token(
     except JWTError:
         log_security_event(
             event_type="invalid_refresh_token",
+            description="Invalid refresh token: JWT decode failed",
+            severity="warning",
+            ip=request.client.host if request.client else "unknown",
             user_id=None,
-            ip_address=request.client.host if request.client else "unknown",
-            details={"error": "JWT decode failed"},
+            error="JWT decode failed",
         )
         raise credentials_exception
 
@@ -289,9 +308,11 @@ def refresh_token(
     if user is None or not user.is_active:
         log_security_event(
             event_type="invalid_refresh_token",
+            description="Invalid refresh token: user not found or inactive",
+            severity="warning",
+            ip=request.client.host if request.client else "unknown",
             user_id=user_id,
-            ip_address=request.client.host if request.client else "unknown",
-            details={"reason": "user_not_found_or_inactive"},
+            reason="user_not_found_or_inactive",
         )
         raise credentials_exception
 
@@ -305,10 +326,11 @@ def refresh_token(
     # Log token refresh
     log_auth_event(
         event_type="token_refresh",
-        user_id=str(user.id),
-        ip_address=request.client.host if request.client else "unknown",
+        username=user.username,
+        ip=request.client.host if request.client else "unknown",
+        user_agent=request.headers.get("user-agent", "unknown"),
         success=True,
-        details={"username": user.username},
+        user_id=str(user.id),
     )
 
     return TokenResponse(
@@ -345,10 +367,11 @@ def logout(
     # Log logout event
     log_auth_event(
         event_type="logout",
-        user_id=str(current_user.id),
-        ip_address=request.client.host if request.client else "unknown",
+        username=current_user.username,
+        ip=request.client.host if request.client else "unknown",
+        user_agent=request.headers.get("user-agent", "unknown"),
         success=True,
-        details={"username": current_user.username},
+        user_id=str(current_user.id),
     )
 
     return {"message": "Successfully logged out"}
