@@ -41,6 +41,9 @@ SessionLocal = sessionmaker(
     bind=sync_engine,
 )
 
+# Export engine for backward compatibility
+engine = sync_engine
+
 
 async def get_async_db():
     """

@@ -31,9 +31,9 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("application_starting", version=settings.APP_VERSION)
 
-    # Create database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Create database tables (using sync engine)
+    with engine.begin() as conn:
+        Base.metadata.create_all(bind=conn)
 
     logger.info("database_initialized")
 
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("application_shutting_down")
-    await engine.dispose()
+    engine.dispose()
 
 
 # Initialize FastAPI application
