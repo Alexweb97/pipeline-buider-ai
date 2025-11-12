@@ -1,13 +1,15 @@
 """
 Database Session Management
 """
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.pool import NullPool
-from app.config import settings
+from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.core.config import settings
 
 # Create async engine
-engine = create_async_engine(
-    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
+async_engine = create_async_engine(
+    settings.database_url_async,
     echo=settings.DB_ECHO,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
@@ -16,19 +18,35 @@ engine = create_async_engine(
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(
-    engine,
+    async_engine,
     class_=AsyncSession,
     expire_on_commit=False,
     autocommit=False,
     autoflush=False,
 )
 
+# Create sync engine
+sync_engine = create_engine(
+    settings.DATABASE_URL,
+    echo=settings.DB_ECHO,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_pre_ping=True,
+)
 
-async def get_db():
+# Create sync session factory
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=sync_engine,
+)
+
+
+async def get_async_db():
     """
-    Dependency to get database session
+    Dependency to get async database session
     Usage in FastAPI:
-        async def endpoint(db: AsyncSession = Depends(get_db)):
+        async def endpoint(db: AsyncSession = Depends(get_async_db)):
             ...
     """
     async with AsyncSessionLocal() as session:

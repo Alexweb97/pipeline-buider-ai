@@ -118,19 +118,23 @@ npm run type-check
 
 ### Phase 1: MVP Backend (2-3 semaines)
 
-#### 1. Authentication & Authorization
-- [ ] Implémenter JWT token generation/validation
-- [ ] Hash de passwords avec bcrypt
-- [ ] Endpoints register/login/refresh/logout
-- [ ] Middleware d'authentication
-- [ ] RBAC (Role-Based Access Control)
-- [ ] Tests unitaires
+#### 1. Authentication & Authorization ✅ COMPLÉTÉ
+- [x] Implémenter JWT token generation/validation
+- [x] Hash de passwords avec bcrypt
+- [x] Endpoints register/login/refresh/logout
+- [x] Middleware d'authentication (dependencies)
+- [x] RBAC (Role-Based Access Control)
+- [x] Tests unitaires
 
-**Fichiers à compléter:**
-- `backend/app/core/security.py`
-- `backend/app/api/v1/auth.py`
-- `backend/app/schemas/user.py`
-- `backend/app/services/auth_service.py`
+**Fichiers créés/complétés:**
+- ✅ `backend/app/core/security.py` - Password hashing & JWT token management
+- ✅ `backend/app/core/config.py` - Application configuration with settings
+- ✅ `backend/app/api/v1/auth.py` - Authentication endpoints
+- ✅ `backend/app/api/dependencies/auth.py` - Auth dependencies & RBAC
+- ✅ `backend/app/api/dependencies/database.py` - Database session dependency
+- ✅ `backend/app/schemas/user.py` - User schemas (déjà existant)
+- ✅ `backend/app/db/session.py` - Updated with sync & async sessions
+- ✅ `backend/tests/test_api/test_auth.py` - Complete test suite
 
 #### 2. Modèles de Base de Données
 - [ ] Compléter tous les modèles SQLAlchemy
