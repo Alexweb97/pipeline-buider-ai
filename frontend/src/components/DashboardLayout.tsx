@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { text: 'Pipelines', icon: <AccountTree />, path: '/pipelines', badge: '3', enabled: true },
     { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: '4', enabled: true },
     { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: '6', enabled: true },
-    { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: null, enabled: false },
+    { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: '5', enabled: true },
     { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: null, enabled: false },
     { text: 'Uploads', icon: <CloudUpload />, path: '/uploads', badge: null, enabled: false },
   ];

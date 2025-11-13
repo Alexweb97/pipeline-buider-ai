@@ -15,6 +15,7 @@ import DashboardPage from './pages/DashboardPage';
 import PipelinesPage from './pages/PipelinesPage';
 import DataSourcesPage from './pages/DataSourcesPage';
 import TransformationsPage from './pages/TransformationsPage';
+import SchedulesPage from './pages/SchedulesPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create modern theme
@@ -223,6 +224,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TransformationsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/schedules"
+              element={
+                <ProtectedRoute>
+                  <SchedulesPage />
                 </ProtectedRoute>
               }
             />
