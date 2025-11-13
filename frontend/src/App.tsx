@@ -19,6 +19,7 @@ import SchedulesPage from './pages/SchedulesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import UploadsPage from './pages/UploadsPage';
 import { PipelineBuilderPage } from './pages/PipelineBuilderPage';
+import TestModulesPage from './pages/TestModules';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create modern theme
@@ -266,6 +267,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Test page for debugging modules */}
+            <Route path="/test-modules" element={<TestModulesPage />} />
 
             {/* Redirect root to dashboard or login */}
             <Route
