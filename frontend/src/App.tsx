@@ -18,6 +18,7 @@ import TransformationsPage from './pages/TransformationsPage';
 import SchedulesPage from './pages/SchedulesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import UploadsPage from './pages/UploadsPage';
+import { PipelineBuilderPage } from './pages/PipelineBuilderPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create modern theme
@@ -253,6 +254,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UploadsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/pipeline-builder"
+              element={
+                <ProtectedRoute>
+                  <PipelineBuilderPage />
                 </ProtectedRoute>
               }
             />

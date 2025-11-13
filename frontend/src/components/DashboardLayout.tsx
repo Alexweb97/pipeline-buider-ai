@@ -35,6 +35,7 @@ import {
   CloudUpload,
   Logout,
   Transform,
+  Edit,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
@@ -76,6 +77,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', badge: null, enabled: true },
+    { text: 'Pipeline Builder', icon: <Edit />, path: '/pipeline-builder', badge: 'NEW', enabled: true },
     { text: 'Pipelines', icon: <AccountTree />, path: '/pipelines', badge: '3', enabled: true },
     { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: '4', enabled: true },
     { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: '6', enabled: true },
