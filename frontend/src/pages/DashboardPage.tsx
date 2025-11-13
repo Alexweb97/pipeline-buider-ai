@@ -1,218 +1,369 @@
 /**
  * Dashboard Page Component
  */
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Container,
-  AppBar,
-  Toolbar,
   Typography,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Avatar,
-  Divider,
   Card,
   CardContent,
   Grid,
+  Button,
+  useTheme,
+  alpha,
+  Paper,
 } from '@mui/material';
 import {
-  AccountCircle,
-  Logout,
-  Dashboard as DashboardIcon,
   DataObject,
   Storage,
+  Schedule,
+  TrendingUp,
+  PlayArrow,
+  Add,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
-import toast from 'react-hot-toast';
+import DashboardLayout from '../components/DashboardLayout';
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const theme = useTheme();
+  const { user } = useAuthStore();
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const stats = [
+    {
+      title: 'Total Pipelines',
+      value: '0',
+      change: '+0%',
+      icon: <DataObject sx={{ fontSize: 40 }} />,
+      color: theme.palette.primary.main,
+      bgColor: alpha(theme.palette.primary.main, 0.1),
+    },
+    {
+      title: 'Data Sources',
+      value: '0',
+      change: '+0%',
+      icon: <Storage sx={{ fontSize: 40 }} />,
+      color: theme.palette.secondary.main,
+      bgColor: alpha(theme.palette.secondary.main, 0.1),
+    },
+    {
+      title: 'Active Jobs',
+      value: '0',
+      change: '0',
+      icon: <Schedule sx={{ fontSize: 40 }} />,
+      color: theme.palette.success.main,
+      bgColor: alpha(theme.palette.success.main, 0.1),
+    },
+    {
+      title: 'Success Rate',
+      value: 'N/A',
+      change: '0%',
+      icon: <TrendingUp sx={{ fontSize: 40 }} />,
+      color: theme.palette.info.main,
+      bgColor: alpha(theme.palette.info.main, 0.1),
+    },
+  ];
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Logout failed');
-    }
-  };
+  const recentActivity = [
+    {
+      title: 'No activity yet',
+      description: 'Start by creating your first pipeline',
+      time: '',
+      status: 'pending',
+    },
+  ];
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      {/* App Bar */}
-      <AppBar position="static">
-        <Toolbar>
-          <DashboardIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            ETL Builder - Dashboard
-          </Typography>
-
-          {/* User Menu */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2">
-              {user?.full_name || user?.username}
-            </Typography>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleMenu}
-              color="inherit"
-            >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-                {user?.username?.charAt(0).toUpperCase()}
-              </Avatar>
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorEl)}
-              onClose={handleClose}
-            >
-              <MenuItem disabled>
-                <Box>
-                  <Typography variant="body2" fontWeight="bold">
-                    {user?.username}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {user?.email}
-                  </Typography>
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    Role: {user?.role}
-                  </Typography>
-                </Box>
-              </MenuItem>
-              <Divider />
-              <MenuItem onClick={handleClose}>
-                <AccountCircle sx={{ mr: 1 }} />
-                Profile
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>
-                <Logout sx={{ mr: 1 }} />
-                Logout
-              </MenuItem>
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* Dashboard Content */}
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Welcome, {user?.full_name || user?.username}!
+    <DashboardLayout>
+      {/* Welcome Section */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Welcome back, {user?.full_name || user?.username}! 👋
         </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Your role: <strong>{user?.role}</strong>
+        <Typography variant="body1" color="text.secondary">
+          Here's what's happening with your data pipelines today.
         </Typography>
+      </Box>
 
-        {/* Dashboard Cards */}
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-          <Grid item xs={12} md={4}>
-            <Card>
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {stats.map((stat, index) => (
+          <Grid item xs={12} sm={6} lg={3} key={index}>
+            <Card
+              elevation={0}
+              sx={{
+                height: '100%',
+                border: `1px solid ${theme.palette.divider}`,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: theme.shadows[4],
+                },
+              }}
+            >
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <DataObject sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                  <Typography variant="h6">Pipelines</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: stat.bgColor,
+                      color: stat.color,
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                  <Box
+                    sx={{
+                      px: 1,
+                      py: 0.5,
+                      borderRadius: 1,
+                      bgcolor: alpha(theme.palette.success.main, 0.1),
+                      color: 'success.main',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      height: 'fit-content',
+                    }}
+                  >
+                    {stat.change}
+                  </Box>
                 </Box>
-                <Typography variant="h3">0</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total ETL pipelines
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {stat.value}
                 </Typography>
-                <Button variant="contained" sx={{ mt: 2 }} fullWidth disabled>
-                  Create Pipeline
-                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {stat.title}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
+        ))}
+      </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Storage sx={{ fontSize: 40, color: 'secondary.main', mr: 2 }} />
-                  <Typography variant="h6">Data Sources</Typography>
-                </Box>
-                <Typography variant="h3">0</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Connected data sources
-                </Typography>
-                <Button variant="outlined" sx={{ mt: 2 }} fullWidth disabled>
-                  Add Source
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
+      <Grid container spacing={3}>
+        {/* Quick Actions */}
+        <Grid item xs={12} lg={8}>
+          <Card
+            elevation={0}
+            sx={{
+              height: '100%',
+              border: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Quick Actions
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Get started with these common tasks
+              </Typography>
 
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <DashboardIcon sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
-                  <Typography variant="h6">Active Jobs</Typography>
-                </Box>
-                <Typography variant="h3">0</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Running ETL jobs
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 2,
+                      cursor: 'not-allowed',
+                      opacity: 0.7,
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: 'primary.main',
+                          mr: 2,
+                        }}
+                      >
+                        <Add />
+                      </Box>
+                      <Typography variant="subtitle1" fontWeight="600">
+                        Create Pipeline
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Build a new ETL pipeline with our visual designer
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      disabled
+                      startIcon={<Add />}
+                    >
+                      New Pipeline
+                    </Button>
+                  </Paper>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: 2,
+                      cursor: 'not-allowed',
+                      opacity: 0.7,
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: theme.palette.secondary.main,
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                          color: 'secondary.main',
+                          mr: 2,
+                        }}
+                      >
+                        <Storage />
+                      </Box>
+                      <Typography variant="subtitle1" fontWeight="600">
+                        Add Data Source
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Connect to databases, APIs, or file systems
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      disabled
+                      startIcon={<Add />}
+                    >
+                      Add Source
+                    </Button>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Getting Started Guide */}
+              <Box sx={{ mt: 4, p: 2.5, borderRadius: 2, bgcolor: alpha(theme.palette.info.main, 0.05) }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  Getting Started Guide
                 </Typography>
-                <Button variant="outlined" sx={{ mt: 2 }} fullWidth disabled>
-                  View Jobs
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
+                <Box component="ol" sx={{ pl: 2, m: 0 }}>
+                  <li>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Connect your first data source (database, API, or file)
+                    </Typography>
+                  </li>
+                  <li>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Create a pipeline using the drag-and-drop visual editor
+                    </Typography>
+                  </li>
+                  <li>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Configure transformations and data mappings
+                    </Typography>
+                  </li>
+                  <li>
+                    <Typography variant="body2">
+                      Schedule your pipeline and monitor executions
+                    </Typography>
+                  </li>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
 
-        {/* Quick Start Guide */}
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              Quick Start Guide
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Welcome to ETL Builder! Here's how to get started:
-            </Typography>
-            <Box component="ol" sx={{ pl: 2 }}>
-              <li>
-                <Typography variant="body1">Connect your data sources (databases, APIs, files)</Typography>
-              </li>
-              <li>
-                <Typography variant="body1">Design your ETL pipeline using the visual editor</Typography>
-              </li>
-              <li>
-                <Typography variant="body1">Configure transformations and mappings</Typography>
-              </li>
-              <li>
-                <Typography variant="body1">Schedule and monitor your pipeline executions</Typography>
-              </li>
-            </Box>
-          </CardContent>
-        </Card>
-      </Container>
-    </Box>
+        {/* Recent Activity */}
+        <Grid item xs={12} lg={4}>
+          <Card
+            elevation={0}
+            sx={{
+              height: '100%',
+              border: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Recent Activity
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Latest pipeline executions
+              </Typography>
+
+              {recentActivity.map((activity, index) => (
+                <Paper
+                  key={index}
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: alpha(theme.palette.grey[500], 0.1),
+                        color: 'text.secondary',
+                      }}
+                    >
+                      <PlayArrow />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" fontWeight="600">
+                        {activity.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {activity.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+              ))}
+
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.primary.main, 0.05),
+                  textAlign: 'center',
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  No pipeline executions yet
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </DashboardLayout>
   );
 }
