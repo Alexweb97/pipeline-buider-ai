@@ -89,6 +89,7 @@ class User(Base):
     auth_logs = relationship("AuthLog", back_populates="user", cascade="all, delete-orphan")
     active_sessions = relationship("ActiveSession", back_populates="user", cascade="all, delete-orphan")
     audit_events = relationship("AuditEvent", back_populates="user")
+    uploaded_files = relationship("UploadedFile", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User {self.username} ({self.email})>"

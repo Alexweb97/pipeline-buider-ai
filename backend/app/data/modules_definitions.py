@@ -1,0 +1,250 @@
+"""
+Module Definitions - Centralized module configurations
+This file contains all module definitions used for seeding and API responses
+"""
+
+MODULES_DATA = [
+    # ============================================================================
+    # EXTRACTORS - Data Sources (13 modules)
+    # ============================================================================
+
+    # Database Extractors
+    {
+        "name": "postgres-extractor",
+        "display_name": "PostgreSQL",
+        "description": "Extract data from PostgreSQL database with advanced query options",
+        "type": "extractor",
+        "category": "database",
+        "python_class": "app.modules.extractors.postgres.PostgreSQLExtractor",
+        "icon": "Database",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "connection_id": {
+                    "type": "string",
+                    "title": "Connection",
+                    "description": "Database connection ID"
+                },
+                "query": {
+                    "type": "string",
+                    "title": "SQL Query",
+                    "description": "SQL query to extract data",
+                    "default": "SELECT * FROM table_name",
+                    "format": "sql"
+                },
+                "limit": {
+                    "type": "integer",
+                    "title": "Row Limit",
+                    "description": "Maximum number of rows to extract (0 = no limit)",
+                    "default": 1000,
+                    "minimum": 0
+                },
+                "offset": {
+                    "type": "integer",
+                    "title": "Offset",
+                    "description": "Number of rows to skip",
+                    "default": 0,
+                    "minimum": 0
+                },
+                "fetch_size": {
+                    "type": "integer",
+                    "title": "Fetch Size",
+                    "description": "Number of rows to fetch per batch",
+                    "default": 1000,
+                    "minimum": 100
+                },
+                "timeout": {
+                    "type": "integer",
+                    "title": "Query Timeout (seconds)",
+                    "description": "Maximum execution time for query",
+                    "default": 300,
+                    "minimum": 1
+                }
+            },
+            "required": ["connection_id", "query"]
+        },
+        "tags": ["database", "sql", "relational", "postgresql"],
+    },
+    {
+        "name": "csv-extractor",
+        "display_name": "CSV File",
+        "description": "Read data from uploaded CSV file",
+        "type": "extractor",
+        "category": "file",
+        "python_class": "app.modules.extractors.csv.CSVExtractor",
+        "icon": "Description",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "string",
+                    "title": "Uploaded File",
+                    "description": "Select uploaded CSV file",
+                    "format": "file-upload",
+                    "accept": ".csv"
+                },
+                "delimiter": {
+                    "type": "string",
+                    "title": "Delimiter",
+                    "description": "Column separator character",
+                    "default": ",",
+                    "enum": [",", ";", "\t", "|"]
+                },
+                "encoding": {
+                    "type": "string",
+                    "title": "Encoding",
+                    "description": "File character encoding",
+                    "default": "utf-8",
+                    "enum": ["utf-8", "latin1", "iso-8859-1", "cp1252"]
+                },
+                "skip_rows": {
+                    "type": "integer",
+                    "title": "Skip Rows",
+                    "description": "Number of rows to skip at the start",
+                    "default": 0,
+                    "minimum": 0
+                },
+                "has_header": {
+                    "type": "boolean",
+                    "title": "Has Header Row",
+                    "description": "First row contains column names",
+                    "default": True
+                },
+                "na_values": {
+                    "type": "array",
+                    "title": "NA Values",
+                    "description": "Values to treat as null/missing",
+                    "items": {"type": "string"},
+                    "default": ["", "NA", "N/A", "null"]
+                }
+            },
+            "required": ["file_id"]
+        },
+        "tags": ["file", "csv", "tabular"],
+    },
+    {
+        "name": "excel-extractor",
+        "display_name": "Excel File",
+        "description": "Read data from uploaded Excel file (.xlsx, .xls)",
+        "type": "extractor",
+        "category": "file",
+        "python_class": "app.modules.extractors.excel.ExcelExtractor",
+        "icon": "TableChart",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "string",
+                    "title": "Uploaded File",
+                    "description": "Select uploaded Excel file",
+                    "format": "file-upload",
+                    "accept": ".xlsx,.xls"
+                },
+                "sheet_name": {
+                    "type": "string",
+                    "title": "Sheet Name/Index",
+                    "description": "Sheet name or index (0 for first sheet)",
+                    "default": "0"
+                },
+                "skip_rows": {
+                    "type": "integer",
+                    "title": "Skip Rows",
+                    "description": "Number of rows to skip",
+                    "default": 0,
+                    "minimum": 0
+                },
+                "has_header": {
+                    "type": "boolean",
+                    "title": "Has Header Row",
+                    "default": True
+                },
+                "use_cols": {
+                    "type": "string",
+                    "title": "Columns to Use",
+                    "description": "e.g. 'A:D' or '0,2,4'",
+                    "default": ""
+                }
+            },
+            "required": ["file_id"]
+        },
+        "tags": ["file", "excel", "spreadsheet", "tabular"],
+    },
+    {
+        "name": "json-extractor",
+        "display_name": "JSON File",
+        "description": "Read data from uploaded JSON file",
+        "type": "extractor",
+        "category": "file",
+        "python_class": "app.modules.extractors.json.JSONExtractor",
+        "icon": "Code",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "string",
+                    "title": "Uploaded File",
+                    "description": "Select uploaded JSON file",
+                    "format": "file-upload",
+                    "accept": ".json"
+                },
+                "json_path": {
+                    "type": "string",
+                    "title": "JSON Path",
+                    "description": "Path to extract data from nested JSON (optional)",
+                    "default": "$"
+                },
+                "orient": {
+                    "type": "string",
+                    "title": "JSON Orientation",
+                    "description": "Expected JSON structure",
+                    "default": "records",
+                    "enum": ["records", "index", "columns", "values", "table"]
+                },
+                "normalize": {
+                    "type": "boolean",
+                    "title": "Normalize Nested Objects",
+                    "description": "Flatten nested JSON structures",
+                    "default": False
+                }
+            },
+            "required": ["file_id"]
+        },
+        "tags": ["file", "json", "semi-structured"],
+    },
+    {
+        "name": "parquet-extractor",
+        "display_name": "Parquet File",
+        "description": "Read data from uploaded Parquet file",
+        "type": "extractor",
+        "category": "file",
+        "python_class": "app.modules.extractors.parquet.ParquetExtractor",
+        "icon": "Inventory",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "string",
+                    "title": "Uploaded File",
+                    "description": "Select uploaded Parquet file",
+                    "format": "file-upload",
+                    "accept": ".parquet"
+                },
+                "columns": {
+                    "type": "array",
+                    "title": "Columns to Read",
+                    "description": "Specific columns to load (empty = all)",
+                    "items": {"type": "string"},
+                    "default": []
+                },
+                "filters": {
+                    "type": "string",
+                    "title": "Row Filters",
+                    "description": "PyArrow filter expression (optional)",
+                    "default": ""
+                }
+            },
+            "required": ["file_id"]
+        },
+        "tags": ["file", "parquet", "columnar"],
+    },
+]

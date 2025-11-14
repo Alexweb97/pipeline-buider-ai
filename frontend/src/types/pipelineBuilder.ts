@@ -44,12 +44,14 @@ export interface ModuleDefinition {
 export interface ConfigField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'boolean' | 'json' | 'code';
+  type: 'text' | 'number' | 'select' | 'boolean' | 'json' | 'code' | 'file-upload';
   required: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
   defaultValue?: any;
   helperText?: string;
+  accept?: string; // For file-upload type
+  format?: string; // JSON Schema format (file-upload, password, uri, code, sql, etc.)
 }
 
 export interface PipelineNode extends Node {
