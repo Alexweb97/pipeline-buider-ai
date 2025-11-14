@@ -7,9 +7,39 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies.database import get_db
 from app.db.models.module import Module
-from app.schemas.module import ModuleResponse
+from app.schemas.module import ModuleResponse, ModuleCreate
 
 router = APIRouter()
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+def create_module(
+    module: ModuleCreate,
+    db: Annotated[Session, Depends(get_db)] = None,
+):
+    """Create a new module"""
+
+    # Check if module with same name already exists
+    existing = db.query(Module).filter(Module.name == module.name).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Module with name '{module.name}' already exists"
+        )
+
+    # Create new module
+    db_module = Module(
+        **module.model_dump(),
+        version="1.0.0",
+        is_active=True,
+        usage_count=0
+    )
+
+    db.add(db_module)
+    db.commit()
+    db.refresh(db_module)
+
+    return ModuleResponse.model_validate(db_module)
 
 
 @router.get("")

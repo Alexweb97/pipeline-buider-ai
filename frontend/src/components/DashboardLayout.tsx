@@ -1,7 +1,7 @@
 /**
  * Modern Dashboard Layout with Sidebar
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -38,6 +38,7 @@ import {
   Edit,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
+import { usePipelineStore } from '../stores/pipelineStore';
 import toast from 'react-hot-toast';
 
 const drawerWidth = 260;
@@ -50,8 +51,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const theme = useTheme();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { pipelines, fetchPipelines } = usePipelineStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  // Fetch pipelines count on mount
+  useEffect(() => {
+    fetchPipelines().catch(() => {
+      // Silently fail - count will stay at 0
+    });
+  }, [fetchPipelines]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -78,12 +87,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', badge: null, enabled: true },
     { text: 'Pipeline Builder', icon: <Edit />, path: '/pipeline-builder', badge: 'NEW', enabled: true },
-    { text: 'Pipelines', icon: <AccountTree />, path: '/pipelines', badge: '3', enabled: true },
-    { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: '4', enabled: true },
-    { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: '6', enabled: true },
-    { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: '5', enabled: true },
-    { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: null, enabled: true },
-    { text: 'Uploads', icon: <CloudUpload />, path: '/uploads', badge: '5', enabled: true },
+    { text: 'Pipelines', icon: <AccountTree />, path: '/pipelines', badge: pipelines.length > 0 ? pipelines.length.toString() : null, enabled: true },
+    { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: 'SOON', enabled: true },
+    { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: 'SOON', enabled: true },
+    { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: 'SOON', enabled: true },
+    { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: 'SOON', enabled: true },
+    { text: 'Uploads', icon: <CloudUpload />, path: '/uploads', badge: 'SOON', enabled: true },
   ];
 
   const drawer = (
