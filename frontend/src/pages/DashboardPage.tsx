@@ -1,6 +1,7 @@
 /**
  * Dashboard Page Component
  */
+import { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -11,6 +12,7 @@ import {
   useTheme,
   alpha,
   Paper,
+  CircularProgress,
 } from '@mui/material';
 import {
   DataObject,
@@ -20,56 +22,77 @@ import {
   PlayArrow,
   Add,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { usePipelineStore } from '../stores/pipelineStore';
 import DashboardLayout from '../components/DashboardLayout';
 
 export default function DashboardPage() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { pipelines, modules, fetchPipelines, fetchModules } = usePipelineStore();
+
+  // Fetch data on mount
+  useEffect(() => {
+    Promise.all([
+      fetchPipelines().catch(() => {}),
+      fetchModules().catch(() => {}),
+    ]);
+  }, [fetchPipelines, fetchModules]);
+
+  // Calculate stats from real data
+  const activePipelines = pipelines.filter(p => p.status === 'active').length;
+  const moduleCount = modules.length;
 
   const stats = [
     {
       title: 'Total Pipelines',
-      value: '0',
-      change: '+0%',
+      value: pipelines.length.toString(),
+      change: pipelines.length > 0 ? `${pipelines.length} total` : 'Get started',
       icon: <DataObject sx={{ fontSize: 40 }} />,
       color: theme.palette.primary.main,
       bgColor: alpha(theme.palette.primary.main, 0.1),
     },
     {
-      title: 'Data Sources',
-      value: '0',
-      change: '+0%',
+      title: 'Available Modules',
+      value: moduleCount.toString(),
+      change: `${moduleCount} ready to use`,
       icon: <Storage sx={{ fontSize: 40 }} />,
       color: theme.palette.secondary.main,
       bgColor: alpha(theme.palette.secondary.main, 0.1),
     },
     {
-      title: 'Active Jobs',
-      value: '0',
-      change: '0',
+      title: 'Active Pipelines',
+      value: activePipelines.toString(),
+      change: `${activePipelines} running`,
       icon: <Schedule sx={{ fontSize: 40 }} />,
       color: theme.palette.success.main,
       bgColor: alpha(theme.palette.success.main, 0.1),
     },
     {
-      title: 'Success Rate',
-      value: 'N/A',
-      change: '0%',
+      title: 'Pipeline Types',
+      value: '3',
+      change: 'ETL/ELT/Streaming',
       icon: <TrendingUp sx={{ fontSize: 40 }} />,
       color: theme.palette.info.main,
       bgColor: alpha(theme.palette.info.main, 0.1),
     },
   ];
 
-  const recentActivity = [
+  const recentActivity = pipelines.length === 0 ? [
     {
-      title: 'No activity yet',
+      title: 'No pipelines yet',
       description: 'Start by creating your first pipeline',
       time: '',
       status: 'pending',
     },
-  ];
+  ] : pipelines.slice(0, 5).map(pipeline => ({
+    title: pipeline.name,
+    description: pipeline.description || 'No description',
+    time: new Date(pipeline.updated_at).toLocaleString(),
+    status: pipeline.status,
+  }));
 
   return (
     <DashboardLayout>
@@ -164,15 +187,17 @@ export default function DashboardPage() {
                 <Grid item xs={12} sm={6}>
                   <Paper
                     elevation={0}
+                    onClick={() => navigate('/pipeline-builder')}
                     sx={{
                       p: 2.5,
                       border: `1px solid ${theme.palette.divider}`,
                       borderRadius: 2,
-                      cursor: 'not-allowed',
-                      opacity: 0.7,
+                      cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
+                        transform: 'translateY(-2px)',
+                        boxShadow: theme.shadows[3],
                       },
                     }}
                   >
@@ -202,8 +227,8 @@ export default function DashboardPage() {
                     <Button
                       variant="contained"
                       fullWidth
-                      disabled
                       startIcon={<Add />}
+                      onClick={() => navigate('/pipeline-builder')}
                     >
                       New Pipeline
                     </Button>
@@ -213,15 +238,17 @@ export default function DashboardPage() {
                 <Grid item xs={12} sm={6}>
                   <Paper
                     elevation={0}
+                    onClick={() => navigate('/pipelines')}
                     sx={{
                       p: 2.5,
                       border: `1px solid ${theme.palette.divider}`,
                       borderRadius: 2,
-                      cursor: 'not-allowed',
-                      opacity: 0.7,
+                      cursor: 'pointer',
                       transition: 'all 0.2s',
                       '&:hover': {
                         borderColor: theme.palette.secondary.main,
+                        transform: 'translateY(-2px)',
+                        boxShadow: theme.shadows[3],
                       },
                     }}
                   >
@@ -242,19 +269,19 @@ export default function DashboardPage() {
                         <Storage />
                       </Box>
                       <Typography variant="subtitle1" fontWeight="600">
-                        Add Data Source
+                        View All Pipelines
                       </Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Connect to databases, APIs, or file systems
+                      Manage and monitor your existing pipelines
                     </Typography>
                     <Button
                       variant="outlined"
                       fullWidth
-                      disabled
-                      startIcon={<Add />}
+                      startIcon={<PlayArrow />}
+                      onClick={() => navigate('/pipelines')}
                     >
-                      Add Source
+                      View Pipelines
                     </Button>
                   </Paper>
                 </Grid>

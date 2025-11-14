@@ -78,7 +78,7 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error: any) {
           const errorMessage =
-            error.response?.data?.detail || error.message || 'Login failed';
+            error.data?.detail || error.message || 'Login failed';
           set({
             user: null,
             accessToken: null,
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error: any) {
           const errorMessage =
-            error.response?.data?.detail || error.message || 'Registration failed';
+            error.data?.detail || error.message || 'Registration failed';
           set({
             isLoading: false,
             error: errorMessage,

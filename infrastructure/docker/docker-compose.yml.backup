@@ -12,7 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5433:5432"  # Changed to avoid conflict with local postgres
+      - "5432:5432"
     networks:
       - etl_network
     healthcheck:

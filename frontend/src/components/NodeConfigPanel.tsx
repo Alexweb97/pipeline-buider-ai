@@ -21,7 +21,8 @@ import {
 } from '@mui/material';
 import { Close, Delete, ContentCopy, Bookmarks, SaveAs } from '@mui/icons-material';
 import { PipelineNode } from '../types/pipelineBuilder';
-import { getModuleById } from '../types/pipelineBuilder';
+import { usePipelineStore } from '../stores/pipelineStore';
+import { mapModulesToDefinitions } from '../utils/moduleMapper';
 
 interface NodeConfigPanelProps {
   node: PipelineNode | null;
@@ -37,11 +38,33 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
   onDelete,
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const { modules } = usePipelineStore();
 
   if (!node) return null;
 
-  const module = getModuleById(node.data.moduleId);
-  if (!module) return null;
+  // Find module by ID from store
+  const moduleDefinitions = mapModulesToDefinitions(modules);
+  const module = moduleDefinitions.find(m => m.id === node.data.moduleId);
+
+  if (!module) {
+    return (
+      <Paper
+        sx={{
+          width: 400,
+          height: '100%',
+          borderLeft: '1px solid',
+          borderColor: 'divider',
+          overflow: 'auto',
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Alert severity="warning">
+            Module configuration not found. Please ensure modules are loaded from the backend.
+          </Alert>
+        </Box>
+      </Paper>
+    );
+  }
 
   const handleConfigChange = (fieldName: string, value: any) => {
     const updatedConfig = {
@@ -54,7 +77,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
   const handlePresetChange = (presetId: string) => {
     if (!module.presets) return;
 
-    const preset = module.presets.find(p => p.id === presetId);
+    const preset = module.presets.find((p: any) => p.id === presetId);
     if (preset) {
       setSelectedPreset(presetId);
       onUpdate(node.id, preset.config);
@@ -233,7 +256,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
                 <MenuItem value="">
                   <em>Custom Configuration</em>
                 </MenuItem>
-                {module.presets.map((preset) => (
+                {module.presets.map((preset: any) => (
                   <MenuItem key={preset.id} value={preset.id}>
                     <Box>
                       <Typography variant="body2" fontWeight="medium">

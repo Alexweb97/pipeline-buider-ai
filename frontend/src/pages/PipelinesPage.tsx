@@ -1,7 +1,7 @@
 /**
  * Pipelines Page Component
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -25,6 +25,9 @@ import {
   InputLabel,
   InputAdornment,
   Tooltip,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Add,
@@ -41,92 +44,147 @@ import {
   Schedule,
   DataObject,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import type { Pipeline, PipelineCreateData } from '../types/pipeline';
+import { usePipelineStore } from '../stores/pipelineStore';
+import type { PipelineResponse } from '../types/api';
 
 export default function PipelinesPage() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  // Mock data - sera remplacé par des vraies données du backend
-  const mockPipelines: Pipeline[] = [
-    {
-      id: '1',
-      name: 'Customer Data ETL',
-      description: 'Extract customer data from MySQL, transform and load to PostgreSQL',
-      type: 'etl',
-      status: 'active',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-20T14:30:00Z',
-      created_by: 'admin',
-      last_run_at: '2024-01-20T14:30:00Z',
-      next_run_at: '2024-01-21T14:30:00Z',
-      total_runs: 145,
-      success_rate: 98.5,
-      source_count: 2,
-      transformation_count: 5,
-    },
-    {
-      id: '2',
-      name: 'Sales Analytics Pipeline',
-      description: 'Real-time sales data streaming and analytics',
-      type: 'streaming',
-      status: 'active',
-      created_at: '2024-01-10T09:00:00Z',
-      updated_at: '2024-01-20T12:00:00Z',
-      created_by: 'admin',
-      last_run_at: '2024-01-20T12:00:00Z',
-      total_runs: 320,
-      success_rate: 99.2,
-      source_count: 3,
-      transformation_count: 8,
-    },
-    {
-      id: '3',
-      name: 'Inventory Sync',
-      description: 'Daily inventory synchronization from warehouse system',
-      type: 'elt',
-      status: 'paused',
-      created_at: '2024-01-05T08:00:00Z',
-      updated_at: '2024-01-18T16:00:00Z',
-      created_by: 'admin',
-      last_run_at: '2024-01-18T08:00:00Z',
-      total_runs: 78,
-      success_rate: 95.8,
-      source_count: 1,
-      transformation_count: 3,
-    },
-  ];
-
-  const [pipelines] = useState<Pipeline[]>(mockPipelines);
-  const [newPipeline, setNewPipeline] = useState<PipelineCreateData>({
-    name: '',
-    description: '',
-    type: 'etl',
+  const [selectedPipeline, setSelectedPipeline] = useState<PipelineResponse | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
   });
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+  // Get pipelines from store
+  const {
+    pipelines,
+    loading,
+    error,
+    fetchPipelines,
+    createPipeline,
+    deletePipeline,
+    executePipeline,
+    clearError,
+  } = usePipelineStore();
+
+  const [newPipeline, setNewPipeline] = useState({
+    name: '',
+    description: '',
+  });
+
+  // Fetch pipelines on mount
+  useEffect(() => {
+    fetchPipelines().catch((err) => {
+      console.error('Failed to fetch pipelines:', err);
+    });
+  }, [fetchPipelines]);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, pipeline: PipelineResponse) => {
     setAnchorEl(event.currentTarget);
+    setSelectedPipeline(pipeline);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  const handleCreatePipeline = () => {
-    // TODO: Implémenter la création de pipeline
-    console.log('Creating pipeline:', newPipeline);
-    setCreateDialogOpen(false);
-    setNewPipeline({ name: '', description: '', type: 'etl' });
+  const handleCreatePipeline = async () => {
+    if (!newPipeline.name.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Pipeline name is required',
+        severity: 'error',
+      });
+      return;
+    }
+
+    try {
+      const pipelineId = await createPipeline({
+        name: newPipeline.name,
+        description: newPipeline.description,
+        nodes: [],
+        edges: [],
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Pipeline created successfully',
+        severity: 'success',
+      });
+
+      setCreateDialogOpen(false);
+      setNewPipeline({ name: '', description: '' });
+
+      // Navigate to pipeline builder to configure the new pipeline
+      navigate(`/pipeline-builder?id=${pipelineId}`);
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: err.data?.detail || err.message || 'Failed to create pipeline',
+        severity: 'error',
+      });
+    }
   };
 
-  const getStatusColor = (status: Pipeline['status']) => {
+  const handleDeletePipeline = async () => {
+    if (!selectedPipeline) return;
+
+    try {
+      await deletePipeline(selectedPipeline.id);
+      setSnackbar({
+        open: true,
+        message: 'Pipeline deleted successfully',
+        severity: 'success',
+      });
+      handleMenuClose();
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: err.data?.detail || err.message || 'Failed to delete pipeline',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleRunPipeline = async (pipelineId: string) => {
+    try {
+      await executePipeline(pipelineId);
+      setSnackbar({
+        open: true,
+        message: 'Pipeline execution started',
+        severity: 'success',
+      });
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: err.data?.detail || err.message || 'Failed to start pipeline',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleEditPipeline = (pipelineId: string) => {
+    navigate(`/pipeline-builder?id=${pipelineId}`);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+    clearError();
+  };
+
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
         return theme.palette.success.main;
       case 'paused':
+      case 'draft':
         return theme.palette.warning.main;
       case 'failed':
         return theme.palette.error.main;
@@ -137,11 +195,12 @@ export default function PipelinesPage() {
     }
   };
 
-  const getStatusIcon = (status: Pipeline['status']) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
         return <CheckCircle sx={{ fontSize: 16 }} />;
       case 'paused':
+      case 'draft':
         return <Pause sx={{ fontSize: 16 }} />;
       case 'failed':
         return <ErrorIcon sx={{ fontSize: 16 }} />;
@@ -150,13 +209,38 @@ export default function PipelinesPage() {
     }
   };
 
+  // Calculate stats from pipeline data
+  const getPipelineStats = (pipeline: PipelineResponse) => {
+    const nodes = pipeline.config?.nodes || [];
+    const nodeCount = nodes.length;
+    const extractorCount = nodes.filter((n: any) => n.type === 'extractor').length;
+    const transformerCount = nodes.filter((n: any) => n.type === 'transformer').length;
+
+    return {
+      nodeCount,
+      extractorCount,
+      transformerCount,
+    };
+  };
+
   const filteredPipelines = pipelines.filter((pipeline) =>
     pipeline.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    pipeline.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (pipeline.description || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <DashboardLayout>
+      {/* Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
@@ -196,9 +280,24 @@ export default function PipelinesPage() {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {loading && pipelines.length === 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Error State */}
+      {error && pipelines.length === 0 && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
       {/* Pipelines Grid */}
-      <Grid container spacing={3}>
-        {filteredPipelines.map((pipeline) => (
+      {!loading && (
+        <Grid container spacing={3}>
+          {filteredPipelines.map((pipeline) => (
           <Grid item xs={12} md={6} lg={4} key={pipeline.id}>
             <Card
               elevation={0}
@@ -230,7 +329,7 @@ export default function PipelinesPage() {
                   />
                   <IconButton
                     size="small"
-                    onClick={(e) => handleMenuOpen(e)}
+                    onClick={(e) => handleMenuOpen(e, pipeline)}
                   >
                     <MoreVert />
                   </IconButton>
@@ -256,11 +355,9 @@ export default function PipelinesPage() {
                     <Typography variant="h6" fontWeight="bold" noWrap>
                       {pipeline.name}
                     </Typography>
-                    <Chip
-                      label={pipeline.type.toUpperCase()}
-                      size="small"
-                      sx={{ height: 20, fontSize: '0.7rem', mt: 0.5 }}
-                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(pipeline.created_at).toLocaleDateString()}
+                    </Typography>
                   </Box>
                 </Box>
 
@@ -275,34 +372,40 @@ export default function PipelinesPage() {
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
+                    minHeight: '40px',
                   }}
                 >
-                  {pipeline.description}
+                  {pipeline.description || 'No description'}
                 </Typography>
 
                 {/* Stats */}
-                <Grid container spacing={2} sx={{ mb: 2 }}>
-                  <Grid item xs={6}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Total Runs
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold">
-                        {pipeline.total_runs}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Success Rate
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold" color="success.main">
-                        {pipeline.success_rate}%
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
+                {(() => {
+                  const stats = getPipelineStats(pipeline);
+                  return (
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Modules
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold">
+                            {stats.nodeCount}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Extractors
+                          </Typography>
+                          <Typography variant="h6" fontWeight="bold">
+                            {stats.extractorCount}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  );
+                })()}
 
                 {/* Footer Info */}
                 <Box
@@ -315,27 +418,30 @@ export default function PipelinesPage() {
                   }}
                 >
                   <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Tooltip title="Data Sources">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <DataObject sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="caption">{pipeline.source_count}</Typography>
-                      </Box>
-                    </Tooltip>
-                    <Tooltip title="Transformations">
+                    <Tooltip title="Transformers">
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <AccountTree sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="caption">{pipeline.transformation_count}</Typography>
+                        <Typography variant="caption">
+                          {getPipelineStats(pipeline).transformerCount}
+                        </Typography>
                       </Box>
                     </Tooltip>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <Tooltip title="Run Pipeline">
-                      <IconButton size="small" color="primary">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleRunPipeline(pipeline.id)}
+                      >
                         <PlayArrow />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Edit Pipeline">
-                      <IconButton size="small">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditPipeline(pipeline.id)}
+                      >
                         <Edit />
                       </IconButton>
                     </Tooltip>
@@ -344,11 +450,12 @@ export default function PipelinesPage() {
               </CardContent>
             </Card>
           </Grid>
-        ))}
-      </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Empty State */}
-      {filteredPipelines.length === 0 && (
+      {!loading && filteredPipelines.length === 0 && !error && (
         <Card
           elevation={0}
           sx={{
@@ -384,11 +491,21 @@ export default function PipelinesPage() {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem
+          onClick={() => {
+            if (selectedPipeline) handleRunPipeline(selectedPipeline.id);
+            handleMenuClose();
+          }}
+        >
           <PlayArrow sx={{ mr: 1 }} fontSize="small" />
           Run Now
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem
+          onClick={() => {
+            if (selectedPipeline) handleEditPipeline(selectedPipeline.id);
+            handleMenuClose();
+          }}
+        >
           <Edit sx={{ mr: 1 }} fontSize="small" />
           Edit
         </MenuItem>
@@ -400,7 +517,12 @@ export default function PipelinesPage() {
           <Pause sx={{ mr: 1 }} fontSize="small" />
           Pause
         </MenuItem>
-        <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
+        <MenuItem
+          onClick={() => {
+            handleDeletePipeline();
+          }}
+          sx={{ color: 'error.main' }}
+        >
           <Delete sx={{ mr: 1 }} fontSize="small" />
           Delete
         </MenuItem>
@@ -422,6 +544,7 @@ export default function PipelinesPage() {
               value={newPipeline.name}
               onChange={(e) => setNewPipeline({ ...newPipeline, name: e.target.value })}
               placeholder="e.g., Customer Data ETL"
+              autoFocus
             />
             <TextField
               fullWidth
@@ -432,18 +555,9 @@ export default function PipelinesPage() {
               onChange={(e) => setNewPipeline({ ...newPipeline, description: e.target.value })}
               placeholder="Describe what this pipeline does..."
             />
-            <FormControl fullWidth>
-              <InputLabel>Pipeline Type</InputLabel>
-              <Select
-                value={newPipeline.type}
-                label="Pipeline Type"
-                onChange={(e) => setNewPipeline({ ...newPipeline, type: e.target.value as any })}
-              >
-                <MenuItem value="etl">ETL (Extract, Transform, Load)</MenuItem>
-                <MenuItem value="elt">ELT (Extract, Load, Transform)</MenuItem>
-                <MenuItem value="streaming">Real-time Streaming</MenuItem>
-              </Select>
-            </FormControl>
+            <Alert severity="info">
+              After creating the pipeline, you'll be redirected to the Pipeline Builder to configure it with modules.
+            </Alert>
           </Box>
         </DialogContent>
         <DialogActions>
@@ -451,9 +565,9 @@ export default function PipelinesPage() {
           <Button
             variant="contained"
             onClick={handleCreatePipeline}
-            disabled={!newPipeline.name}
+            disabled={!newPipeline.name.trim() || loading}
           >
-            Create
+            {loading ? 'Creating...' : 'Create & Configure'}
           </Button>
         </DialogActions>
       </Dialog>

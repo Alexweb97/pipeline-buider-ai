@@ -1,7 +1,7 @@
 /**
  * Module Palette Component - Sidebar with draggable modules
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -16,6 +16,8 @@ import {
   Chip,
   TextField,
   InputAdornment,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -31,7 +33,9 @@ import {
   Storage,
   Cloud,
 } from '@mui/icons-material';
-import { MODULE_DEFINITIONS, ModuleDefinition, ModuleCategory } from '../types/pipelineBuilder';
+import { ModuleDefinition, ModuleCategory } from '../types/pipelineBuilder';
+import { usePipelineStore } from '../stores/pipelineStore';
+import { mapModulesToDefinitions } from '../utils/moduleMapper';
 
 const iconMap: Record<string, React.ReactNode> = {
   Database: <DatabaseIcon />,
@@ -60,19 +64,35 @@ export const ModulePalette: React.FC<ModulePaletteProps> = ({ onDragStart }) => 
   const [searchQuery, setSearchQuery] = useState('');
   const [expanded, setExpanded] = useState<string[]>(['extractors', 'transformers', 'loaders']);
 
+  // Get modules and state from store
+  const { modules, loading, error, fetchModulesByType } = usePipelineStore();
+
+  // Fetch modules from API on mount
+  useEffect(() => {
+    if (modules.length === 0) {
+      fetchModulesByType().catch((err) => {
+        console.error('Failed to fetch modules from API:', err);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleAccordionChange = (panel: string) => {
     setExpanded((prev) =>
       prev.includes(panel) ? prev.filter((p) => p !== panel) : [...prev, panel]
     );
   };
 
-  const filteredModules = MODULE_DEFINITIONS.filter((module) =>
+  // Convert API modules to frontend format
+  const moduleDefinitions = mapModulesToDefinitions(modules);
+
+  const filteredModules = moduleDefinitions.filter((module: ModuleDefinition) =>
     module.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     module.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const modulesByCategory = (category: ModuleCategory) =>
-    filteredModules.filter((m) => m.category === category);
+    filteredModules.filter((m: ModuleDefinition) => m.category === category);
 
   return (
     <Paper
@@ -86,9 +106,21 @@ export const ModulePalette: React.FC<ModulePaletteProps> = ({ onDragStart }) => 
     >
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
-          Module Library
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ flexGrow: 1 }}>
+            Module Library
+          </Typography>
+          {loading && <CircularProgress size={20} />}
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 1, py: 0 }}>
+            <Typography variant="caption">
+              Failed to load modules from API. Please check backend connection.
+            </Typography>
+          </Alert>
+        )}
+
         <TextField
           fullWidth
           size="small"
@@ -107,6 +139,14 @@ export const ModulePalette: React.FC<ModulePaletteProps> = ({ onDragStart }) => 
 
       {/* Module Categories */}
       <Box sx={{ p: 1 }}>
+        {!loading && !error && moduleDefinitions.length === 0 && (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No modules available. Please ensure the backend is running and modules are seeded.
+            </Typography>
+          </Box>
+        )}
+
         {(['extractors', 'transformers', 'loaders'] as ModuleCategory[]).map((category) => {
           const modules = modulesByCategory(category);
           if (modules.length === 0) return null;
