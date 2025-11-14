@@ -4,7 +4,7 @@ Pipeline API Routes
 from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from app.schemas.pipeline import (
     PipelineResponse,
     PipelineExecuteRequest,
 )
+from app.core.audit import log_audit_event, get_client_ip, get_user_agent
 
 router = APIRouter()
 
@@ -69,6 +70,7 @@ def list_pipelines(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_pipeline(
     pipeline_data: PipelineCreate,
+    request: Request,
     db: Annotated[Session, Depends(get_db)] = None,
     current_user: Annotated[User, Depends(get_current_user)] = None,
 ):
@@ -91,6 +93,19 @@ def create_pipeline(
     db.add(pipeline)
     db.commit()
     db.refresh(pipeline)
+
+    # Log audit event
+    log_audit_event(
+        db=db,
+        user=current_user,
+        action="create",
+        resource_type="pipeline",
+        resource_id=pipeline.id,
+        resource_name=pipeline.name,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        details={"description": pipeline.description, "tags": pipeline.tags},
+    )
 
     return PipelineResponse.model_validate(pipeline)
 
@@ -125,6 +140,7 @@ def get_pipeline(
 def update_pipeline(
     pipeline_id: UUID,
     pipeline_data: PipelineUpdate,
+    request: Request,
     db: Annotated[Session, Depends(get_db)] = None,
     current_user: Annotated[User, Depends(get_current_user)] = None,
 ):
@@ -153,12 +169,26 @@ def update_pipeline(
     db.commit()
     db.refresh(pipeline)
 
+    # Log audit event
+    log_audit_event(
+        db=db,
+        user=current_user,
+        action="update",
+        resource_type="pipeline",
+        resource_id=pipeline.id,
+        resource_name=pipeline.name,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        details={"updated_fields": list(update_data.keys())},
+    )
+
     return PipelineResponse.model_validate(pipeline)
 
 
 @router.delete("/{pipeline_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pipeline(
     pipeline_id: UUID,
+    request: Request,
     db: Annotated[Session, Depends(get_db)] = None,
     current_user: Annotated[User, Depends(get_current_user)] = None,
 ):
@@ -179,6 +209,21 @@ def delete_pipeline(
             detail="Pipeline not found",
         )
 
+    # Save pipeline info before deletion for audit log
+    pipeline_name = pipeline.name
+
+    # Log audit event before deletion
+    log_audit_event(
+        db=db,
+        user=current_user,
+        action="delete",
+        resource_type="pipeline",
+        resource_id=pipeline.id,
+        resource_name=pipeline_name,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+
     db.delete(pipeline)
     db.commit()
 
@@ -189,6 +234,7 @@ def delete_pipeline(
 def execute_pipeline(
     pipeline_id: UUID,
     execute_data: PipelineExecuteRequest,
+    request: Request,
     db: Annotated[Session, Depends(get_db)] = None,
     current_user: Annotated[User, Depends(get_current_user)] = None,
 ):
@@ -228,6 +274,23 @@ def execute_pipeline(
     db.add(execution)
     db.commit()
     db.refresh(execution)
+
+    # Log audit event
+    log_audit_event(
+        db=db,
+        user=current_user,
+        action="execute",
+        resource_type="pipeline",
+        resource_id=pipeline.id,
+        resource_name=pipeline.name,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        details={
+            "execution_id": str(execution.id),
+            "trigger_type": execute_data.trigger_type,
+            "params": execute_data.params,
+        },
+    )
 
     return {
         "execution_id": str(execution.id),

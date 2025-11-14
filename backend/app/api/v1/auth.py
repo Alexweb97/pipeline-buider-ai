@@ -12,6 +12,13 @@ from sqlalchemy.orm import Session
 from app.api.dependencies.auth import get_current_active_user, security
 from app.api.dependencies.database import get_db
 from app.core.audit_logger import log_auth_event, log_security_event
+from app.core.audit import (
+    log_auth_attempt,
+    create_session,
+    end_session,
+    get_client_ip,
+    get_user_agent,
+)
 from app.core.config import settings
 from app.core.rate_limit import RATE_LIMITS, limiter
 from app.core.security import (
@@ -145,7 +152,7 @@ def login(
         # Verify against a precalculated dummy hash to maintain constant timing
         verify_password(credentials.password, DUMMY_PASSWORD_HASH)
 
-        # Log failed login attempt
+        # Log failed login attempt (old logger)
         log_auth_event(
             event_type="login",
             username=credentials.username,
@@ -154,6 +161,17 @@ def login(
             success=False,
             user_id=None,
             reason="user_not_found",
+        )
+
+        # Log to database
+        log_auth_attempt(
+            db=db,
+            username=credentials.username,
+            email=None,
+            status="failed",
+            ip_address=get_client_ip(request),
+            user_agent=get_user_agent(request),
+            failure_reason="user_not_found",
         )
 
         raise HTTPException(
@@ -185,7 +203,7 @@ def login(
         user.increment_failed_attempts()
         db.commit()
 
-        # Log failed login attempt
+        # Log failed login attempt (old logger)
         log_auth_event(
             event_type="login",
             username=credentials.username,
@@ -195,6 +213,18 @@ def login(
             user_id=str(user.id),
             reason="invalid_password",
             failed_attempts=user.failed_login_attempts,
+        )
+
+        # Log to database
+        log_auth_attempt(
+            db=db,
+            username=user.username,
+            email=user.email,
+            status="failed",
+            user_id=user.id,
+            ip_address=get_client_ip(request),
+            user_agent=get_user_agent(request),
+            failure_reason="invalid_password",
         )
 
         raise HTTPException(
@@ -233,7 +263,7 @@ def login(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token({"sub": str(user.id)})
 
-    # Log successful login
+    # Log successful login (old logger)
     log_auth_event(
         event_type="login",
         username=user.username,
@@ -242,6 +272,26 @@ def login(
         success=True,
         user_id=str(user.id),
         role=user.role,
+    )
+
+    # Log to database
+    log_auth_attempt(
+        db=db,
+        username=user.username,
+        email=user.email,
+        status="success",
+        user_id=user.id,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+
+    # Create active session (location will be auto-detected from IP)
+    create_session(
+        db=db,
+        user_id=user.id,
+        token=access_token,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
 
     return TokenResponse(
@@ -346,6 +396,7 @@ def logout(
     request: Request,
     current_user: Annotated[User, Depends(get_current_active_user)],
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
     Logout current user and blacklist the token
@@ -354,6 +405,7 @@ def logout(
         request: FastAPI request object
         current_user: Current authenticated user
         credentials: HTTP Bearer credentials containing JWT token
+        db: Database session
 
     Returns:
         dict: Success message
@@ -364,7 +416,10 @@ def logout(
     # Blacklist the access token
     blacklist_token(token, settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
 
-    # Log logout event
+    # End active session
+    end_session(db=db, token=token)
+
+    # Log logout event (old logger)
     log_auth_event(
         event_type="logout",
         username=current_user.username,
@@ -372,6 +427,17 @@ def logout(
         user_agent=request.headers.get("user-agent", "unknown"),
         success=True,
         user_id=str(current_user.id),
+    )
+
+    # Log to database
+    log_auth_attempt(
+        db=db,
+        username=current_user.username,
+        email=current_user.email,
+        status="success",
+        user_id=current_user.id,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
 
     return {"message": "Successfully logged out"}

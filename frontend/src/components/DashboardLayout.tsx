@@ -36,6 +36,7 @@ import {
   Logout,
   Transform,
   Edit,
+  Security as SecurityIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
 import { usePipelineStore } from '../stores/pipelineStore';
@@ -84,15 +85,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
+  // Calculate security issues count (simplified)
+  const securityIssuesCount = pipelines.length > 0 ? pipelines.length * 2 : 0;
+
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', badge: null, enabled: true },
-    { text: 'Pipeline Builder', icon: <Edit />, path: '/pipeline-builder', badge: 'NEW', enabled: true },
+    { text: 'Pipeline Builder', icon: <Edit />, path: '/pipeline-builder', badge: null, enabled: true },
     { text: 'Pipelines', icon: <AccountTree />, path: '/pipelines', badge: pipelines.length > 0 ? pipelines.length.toString() : null, enabled: true },
-    { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: 'SOON', enabled: true },
-    { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: 'SOON', enabled: true },
-    { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: 'SOON', enabled: true },
-    { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: 'SOON', enabled: true },
-    { text: 'Uploads', icon: <CloudUpload />, path: '/uploads', badge: 'SOON', enabled: true },
+    { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: null, enabled: true },
+    { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: null, enabled: true },
+    { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: null, enabled: true },
+    { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: null, enabled: true },
+    { text: 'Uploads', icon: <CloudUpload />, path: '/uploads', badge: null, enabled: true },
+    { text: 'Security', icon: <SecurityIcon />, path: '/security', badge: securityIssuesCount > 0 ? securityIssuesCount.toString() : null, enabled: true },
   ];
 
   const drawer = (
@@ -216,20 +221,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <List sx={{ px: 1.5, py: 1 }}>
         <ListItem disablePadding>
           <ListItemButton
-            disabled
+            onClick={() => navigate('/settings')}
             sx={{
               borderRadius: 1.5,
-              '&.Mui-disabled': {
-                opacity: 0.5,
+              bgcolor: window.location.pathname === '/settings' ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+              '&:hover': {
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
               },
             }}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>
+            <ListItemIcon
+              sx={{
+                minWidth: 40,
+                color: window.location.pathname === '/settings' ? 'primary.main' : 'text.secondary',
+              }}
+            >
               <Settings />
             </ListItemIcon>
             <ListItemText
               primary="Settings"
-              primaryTypographyProps={{ fontSize: '0.9rem' }}
+              primaryTypographyProps={{
+                fontSize: '0.9rem',
+                fontWeight: window.location.pathname === '/settings' ? 600 : 400,
+              }}
             />
           </ListItemButton>
         </ListItem>

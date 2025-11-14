@@ -86,6 +86,9 @@ class User(Base):
     pipelines = relationship("Pipeline", back_populates="creator")
     connections = relationship("Connection", back_populates="creator")
     executions = relationship("PipelineExecution", foreign_keys="PipelineExecution.triggered_by", back_populates="triggered_by_user")
+    auth_logs = relationship("AuthLog", back_populates="user", cascade="all, delete-orphan")
+    active_sessions = relationship("ActiveSession", back_populates="user", cascade="all, delete-orphan")
+    audit_events = relationship("AuditEvent", back_populates="user")
 
     def __repr__(self) -> str:
         return f"<User {self.username} ({self.email})>"

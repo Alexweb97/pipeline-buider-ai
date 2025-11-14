@@ -18,6 +18,8 @@ import TransformationsPage from './pages/TransformationsPage';
 import SchedulesPage from './pages/SchedulesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import UploadsPage from './pages/UploadsPage';
+import SecurityPage from './pages/SecurityPage';
+import SettingsPage from './pages/SettingsPage';
 import { PipelineBuilderPage } from './pages/PipelineBuilderPage';
 import TestModulesPage from './pages/TestModules';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -260,10 +262,28 @@ function App() {
             />
 
             <Route
+              path="/security"
+              element={
+                <ProtectedRoute>
+                  <SecurityPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/pipeline-builder"
               element={
                 <ProtectedRoute>
                   <PipelineBuilderPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />
