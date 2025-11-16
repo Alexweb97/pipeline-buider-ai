@@ -27,7 +27,8 @@ Plateforme ETL/ELT no-code/low-code avec assistance IA pour data engineers et d�
 ### 🔥 P1 - Important (2 semaines)
 - [x] ~~**Implémentation des extractors**~~ - ✅ **TERMINÉ** (branche: `feat/implement-extractors`)
 - [x] ~~**Bibliothèque de snippets**~~ - ✅ **TERMINÉ** (30+ snippets Python/SQL)
-- [ ] **Testing & validation** - Tests automatiques des transformations
+- [x] ~~**UI Integration**~~ - ✅ **TERMINÉ** (branche: `feat/integrate-code-editor-ui`)
+- [x] ~~**Testing & validation**~~ - ✅ **TERMINÉ** (branche: `feat/testing-validation`)
 
 ### 📌 P2 - Nice to have (1 mois)
 - [ ] **Page de gestion des fichiers** - Interface pour gérer les uploads
@@ -165,6 +166,74 @@ frontend/src/components/
 - Preview fonctionnel avec données mockées (TODO: intégrer données réelles du pipeline)
 - Code editor avec validation, help, et preview intégrés dans le panel
 - Build sans erreurs TypeScript pour les fichiers modifiés
+
+---
+
+#### 🧪 Testing & Validation
+**Status :** ✅ **TERMINÉ**
+**Branche :** `feat/testing-validation`
+**Priorité :** P1
+**Échéance :** 16/11/2025
+**Assigné :** Claude Code
+**Terminé le :** 2025-11-16
+
+**Tâches :**
+- [x] **Tests Unitaires - Extractors** ✅ **TERMINÉ**
+  - [x] CSVExtractor: 7 tests (basic, delimiter, skip_rows, no_header, errors)
+  - [x] ExcelExtractor: 2 tests (basic, sheet selection)
+  - [x] JSONExtractor: 1 test (basic extraction)
+  - [x] ParquetExtractor: 2 tests (basic, column selection)
+  - [x] FileResolver: 3 tests (valid, nonexistent, soft-deleted)
+
+- [x] **Tests Unitaires - Transformers** ✅ **TERMINÉ**
+  - [x] CodeExecutor: 10 tests (transforms, filters, aggregations, security, timeout, validation)
+  - [x] PythonTransformer: 5 tests (basic, filter, errors, timeout, metadata)
+  - [x] SQLTransformer: 8 tests (basic, filters, aggregations, window functions, CTEs, errors)
+  - [x] Integration: 2 tests (Python→SQL, SQL→Python chaining)
+
+- [x] **Tests API** ✅ **TERMINÉ**
+  - [x] /transforms/preview: 9 tests (Python, SQL, aggregations, errors, auth)
+  - [x] /transforms/validate: 5 tests (valid/invalid code, syntax, auth)
+  - [x] /transforms/template: 3 tests (Python, SQL templates, auth)
+
+- [x] **Dependencies** ✅ **TERMINÉ**
+  - [x] Ajout openpyxl>=3.1.2 (Excel support)
+  - [x] Ajout duckdb>=0.10.0 (SQL transformations)
+  - [x] Ajout RestrictedPython>=7.0 (Python sandbox)
+  - [x] Configuration pytest dans pyproject.toml
+
+- [x] **Documentation** ✅ **TERMINÉ**
+  - [x] tests/README.md avec guide complet
+  - [x] Instructions d'exécution des tests
+  - [x] Coverage report configuration
+  - [x] Best practices et troubleshooting
+
+**Fichiers créés :**
+```
+backend/tests/
+  unit/
+    __init__.py                  # ✅ CRÉÉ
+    test_extractors.py           # ✅ CRÉÉ - 18 tests
+    test_transformers.py         # ✅ CRÉÉ - 25 tests
+  test_api/
+    test_transforms.py           # ✅ CRÉÉ - 17 tests
+  README.md                      # ✅ CRÉÉ - Documentation complète
+
+backend/pyproject.toml           # ✅ MODIFIÉ - Ajout dépendances
+```
+
+**Résultat :**
+- 60+ tests automatisés couvrant extractors, transformers et API
+- 100% coverage goal pour modules critiques
+- Tests unitaires, d'intégration et API
+- Documentation complète pour exécuter et écrire des tests
+- Prêt pour CI/CD integration (GitHub Actions à configurer)
+
+**Note :** Les tests nécessitent un rebuild du container Docker pour installer les nouvelles dépendances :
+```bash
+docker-compose build backend
+docker exec etl_backend python -m pytest
+```
 
 ---
 
