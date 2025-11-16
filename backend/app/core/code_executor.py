@@ -3,9 +3,9 @@ Code Executor - Secure sandbox for executing user Python code
 Uses RestrictedPython for security
 """
 import signal
-import sys
-from typing import Any, Dict, Optional
 from contextlib import contextmanager
+from typing import Any
+
 import pandas as pd
 
 
@@ -143,7 +143,7 @@ class CodeExecutor:
         except Exception as e:
             raise RuntimeError(f"Transformation failed: {str(e)}")
 
-    def validate_code(self, code: str) -> Dict[str, Any]:
+    def validate_code(self, code: str) -> dict[str, Any]:
         """
         Validate Python code without executing it
 
@@ -209,7 +209,7 @@ def preview_transform(
     df: pd.DataFrame,
     code: str,
     sample_size: int = 100
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Preview transformation on a sample of data
 

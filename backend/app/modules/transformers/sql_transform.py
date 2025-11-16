@@ -2,7 +2,8 @@
 SQL Transform Module
 Allows users to write SQL queries on DataFrames using DuckDB
 """
-from typing import Any, Dict
+from typing import Any
+
 import pandas as pd
 
 try:
@@ -21,7 +22,7 @@ class SQLTransformer:
     - timeout: Maximum execution time in seconds (default: 30)
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize SQL Transformer
 
@@ -76,7 +77,7 @@ class SQLTransformer:
             raise RuntimeError(f"SQL transformation failed: {str(e)}")
 
     @staticmethod
-    def get_config_schema() -> Dict[str, Any]:
+    def get_config_schema() -> dict[str, Any]:
         """Get JSON schema for module configuration"""
         return {
             "type": "object",
@@ -107,7 +108,7 @@ LIMIT 1000"""
         }
 
     @staticmethod
-    def get_metadata() -> Dict[str, Any]:
+    def get_metadata() -> dict[str, Any]:
         """Get module metadata"""
         return {
             "name": "sql-transformer",
@@ -124,7 +125,7 @@ def preview_sql_transform(
     df: pd.DataFrame,
     query: str,
     sample_size: int = 100
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Preview SQL transformation on a sample of data
 
