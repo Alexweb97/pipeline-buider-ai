@@ -247,4 +247,95 @@ MODULES_DATA = [
         },
         "tags": ["file", "parquet", "columnar"],
     },
+
+    # ============================================================================
+    # TRANSFORMERS - Custom Code (2 modules)
+    # ============================================================================
+
+    {
+        "name": "python-transformer",
+        "display_name": "Python Transform",
+        "description": "Execute custom Python code for data transformation",
+        "type": "transformer",
+        "category": "custom",
+        "python_class": "app.modules.transformers.python_transform.PythonTransformer",
+        "icon": "Code",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "title": "Python Code",
+                    "description": "Python code with a transform(df) function",
+                    "format": "code",
+                    "default": """def transform(df: pd.DataFrame) -> pd.DataFrame:
+    \"\"\"
+    Transform the input DataFrame
+
+    Args:
+        df: Input pandas DataFrame
+
+    Returns:
+        Transformed DataFrame
+    \"\"\"
+    # Your transformation code here
+    # Example: Add a new column
+    df['new_column'] = df['existing_column'] * 2
+
+    # Example: Filter rows
+    df = df[df['age'] > 18]
+
+    return df
+"""
+                },
+                "timeout": {
+                    "type": "integer",
+                    "title": "Timeout (seconds)",
+                    "description": "Maximum execution time",
+                    "default": 30,
+                    "minimum": 1,
+                    "maximum": 300
+                }
+            },
+            "required": ["code"]
+        },
+        "tags": ["python", "custom", "code", "flexible"],
+    },
+    {
+        "name": "sql-transformer",
+        "display_name": "SQL Transform",
+        "description": "Execute SQL queries on data using DuckDB",
+        "type": "transformer",
+        "category": "custom",
+        "python_class": "app.modules.transformers.sql_transform.SQLTransformer",
+        "icon": "Storage",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "title": "SQL Query",
+                    "description": "SQL query to transform data (use 'input' as table name)",
+                    "format": "sql",
+                    "default": """SELECT
+    *,
+    -- Add your transformations here
+    column1 * 2 AS calculated_column
+FROM input
+WHERE column1 > 0
+LIMIT 1000"""
+                },
+                "timeout": {
+                    "type": "integer",
+                    "title": "Timeout (seconds)",
+                    "description": "Maximum execution time",
+                    "default": 30,
+                    "minimum": 1,
+                    "maximum": 300
+                }
+            },
+            "required": ["query"]
+        },
+        "tags": ["sql", "duckdb", "query", "custom"],
+    },
 ]
