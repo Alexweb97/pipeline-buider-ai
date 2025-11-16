@@ -34,7 +34,7 @@ RUN uv venv && \
     redis hiredis celery flower \
     apache-airflow-client requests \
     python-jose[cryptography] passlib[bcrypt] bcrypt==4.1.2 python-dotenv cryptography slowapi \
-    pandas polars numpy pyarrow \
+    pandas polars numpy pyarrow openpyxl duckdb RestrictedPython \
     pymongo pymysql sqlalchemy-utils \
     minio boto3 \
     scikit-learn spacy openai \
@@ -73,7 +73,7 @@ RUN uv venv && \
     redis hiredis celery flower \
     apache-airflow-client requests \
     python-jose[cryptography] passlib[bcrypt] bcrypt==4.1.2 python-dotenv cryptography slowapi \
-    pandas polars numpy pyarrow \
+    pandas polars numpy pyarrow openpyxl duckdb RestrictedPython \
     pymongo pymysql sqlalchemy-utils \
     minio boto3 \
     scikit-learn spacy openai \
