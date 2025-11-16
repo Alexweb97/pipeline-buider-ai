@@ -20,9 +20,9 @@ Plateforme ETL/ELT no-code/low-code avec assistance IA pour data engineers et d�
 ## 🏆 Priorités Actuelles
 
 ### ⚡ P0 - Critique (Cette semaine)
-- [ ] **Module Python Transform** - Éditeur de code pour transformations custom
-- [ ] **Module SQL Transform** - Transformations SQL avec DuckDB
-- [ ] **Système de prévisualisation** - Preview en temps réel des transformations
+- [x] ~~**Module Python Transform**~~ - 🚧 **EN COURS** (branche: `feat/python-sql-transform`)
+- [x] ~~**Module SQL Transform**~~ - 🚧 **EN COURS** (branche: `feat/python-sql-transform`)
+- [x] ~~**Système de prévisualisation**~~ - 🚧 **EN COURS** (branche: `feat/python-sql-transform`)
 
 ### 🔥 P1 - Important (2 semaines)
 - [ ] **Implémentation des extractors** - CSV, Excel, JSON, Parquet avec file_id
@@ -70,48 +70,52 @@ Plateforme ETL/ELT no-code/low-code avec assistance IA pour data engineers et d�
 ### 🚧 En cours
 
 #### 🔄 Transformations Custom
-**Status :** En planification
+**Status :** 🚧 EN DÉVELOPPEMENT
+**Branche :** `feat/python-sql-transform`
 **Priorité :** P0
 **Échéance :** 17/11/2025
+**Assigné :** Claude Code
+**Dernière mise à jour :** 2025-11-14 15:00
 
 **Tâches :**
-- [ ] **Backend**
-  - [ ] Créer `PythonTransformer` avec sandbox RestrictedPython
-  - [ ] Créer `SQLTransformer` avec DuckDB
-  - [ ] API endpoint `/api/v1/transforms/preview` pour test en temps réel
-  - [ ] Validation et sécurité du code exécuté
-  - [ ] Gestion des timeouts et erreurs
+- [x] **Backend** ✅ **TERMINÉ**
+  - [x] Créer `PythonTransformer` avec sandbox RestrictedPython
+  - [x] Créer `SQLTransformer` avec DuckDB
+  - [x] API endpoint `/api/v1/transforms/preview` pour test en temps réel
+  - [x] Validation et sécurité du code exécuté
+  - [x] Gestion des timeouts et erreurs
 
-- [ ] **Frontend**
-  - [ ] Component `CodeEditorField` avec Monaco Editor
-  - [ ] Component `DataPreview` pour afficher résultats
-  - [ ] Component `SnippetsLibrary` pour templates
-  - [ ] Intégration dans NodeConfigPanel
-  - [ ] Tabs : Code / Preview / Snippets
+- [x] **Frontend** ✅ **TERMINÉ**
+  - [x] Component `CodeEditorField` avec Monaco Editor
+  - [x] Component `DataPreview` pour afficher résultats
+  - [x] Bibliothèque de snippets (20+ Python + 10+ SQL)
+  - [ ] Intégration dans NodeConfigPanel (À FAIRE)
+  - [ ] Tabs : Code / Preview / Snippets (À FAIRE)
 
-- [ ] **Modules**
-  - [ ] Module "Python Transform" dans seed_modules
-  - [ ] Module "SQL Transform" dans seed_modules
-  - [ ] Définir config_schema pour les deux modules
+- [x] **Modules** ✅ **TERMINÉ**
+  - [x] Module "Python Transform" dans modules_definitions
+  - [x] Module "SQL Transform" dans modules_definitions
+  - [x] Définir config_schema pour les deux modules
 
-**Fichiers à créer :**
+**Fichiers créés :** ✅
 ```
 backend/
   app/modules/transformers/
-    python_transform.py          # NEW
-    sql_transform.py             # NEW
+    python_transform.py          # ✅ CRÉÉ
+    sql_transform.py             # ✅ CRÉÉ
   app/core/
-    code_executor.py             # NEW - Sandbox sécurisé
+    code_executor.py             # ✅ CRÉÉ - Sandbox sécurisé
   app/api/v1/
-    transforms.py                # NEW - Preview endpoint
+    transforms.py                # ✅ CRÉÉ - Preview endpoint
+  app/data/
+    modules_definitions.py       # ✅ MODIFIÉ - Ajout 2 modules
 
 frontend/
   src/components/
-    CodeEditorField.tsx          # NEW
-    DataPreview.tsx              # NEW
-    SnippetsLibrary.tsx          # NEW
+    CodeEditorField.tsx          # ✅ CRÉÉ
+    DataPreview.tsx              # ✅ CRÉÉ
   src/utils/
-    codeTemplates.ts             # NEW - Bibliothèque snippets
+    codeTemplates.ts             # ✅ CRÉÉ - 30+ snippets
 ```
 
 **Dépendances :**
