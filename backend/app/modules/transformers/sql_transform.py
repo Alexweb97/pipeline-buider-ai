@@ -74,7 +74,7 @@ class SQLTransformer:
             return result
 
         except Exception as e:
-            raise RuntimeError(f"SQL transformation failed: {str(e)}")
+            raise RuntimeError(f"SQL transformation failed: {str(e)}") from e
 
     @staticmethod
     def get_config_schema() -> dict[str, Any]:

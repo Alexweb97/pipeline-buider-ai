@@ -139,9 +139,9 @@ class CodeExecutor:
                 f"Code execution timed out after {self.timeout} seconds"
             )
         except SyntaxError as e:
-            raise ValueError(f"Syntax error in code: {str(e)}")
+            raise ValueError(f"Syntax error in code: {str(e)}") from e
         except Exception as e:
-            raise RuntimeError(f"Transformation failed: {str(e)}")
+            raise RuntimeError(f"Transformation failed: {str(e)}") from e
 
     def validate_code(self, code: str) -> dict[str, Any]:
         """

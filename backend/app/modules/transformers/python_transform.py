@@ -61,7 +61,7 @@ class PythonTransformer:
             return result
 
         except Exception as e:
-            raise RuntimeError(f"Python transformation failed: {str(e)}")
+            raise RuntimeError(f"Python transformation failed: {str(e)}") from e
 
     @staticmethod
     def get_config_schema() -> dict[str, Any]:
