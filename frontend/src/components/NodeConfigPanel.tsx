@@ -18,15 +18,13 @@ import {
   IconButton,
   Chip,
   Alert,
-  CircularProgress,
 } from '@mui/material';
-import { Close, Delete, ContentCopy, Bookmarks, SaveAs } from '@mui/icons-material';
+import { Close, Delete, ContentCopy, Bookmarks, SaveAs, Code as CodeIcon } from '@mui/icons-material';
 import { PipelineNode } from '../types/pipelineBuilder';
 import { usePipelineStore } from '../stores/pipelineStore';
 import { mapModulesToDefinitions } from '../utils/moduleMapper';
 import FileUploadField from './FileUploadField';
-import CodeEditorField from './CodeEditorField';
-import DataPreview from './DataPreview';
+import CodeEditorModal from './CodeEditorModal';
 
 interface NodeConfigPanelProps {
   node: PipelineNode | null;
@@ -42,9 +40,8 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
   onDelete,
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<string>('');
-  const [previewData, setPreviewData] = useState<any>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [codeEditorOpen, setCodeEditorOpen] = useState(false);
+  const [codeEditorField, setCodeEditorField] = useState<any>(null);
   const { modules } = usePipelineStore();
 
   if (!node) return null;
@@ -88,46 +85,6 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
     if (preset) {
       setSelectedPreset(presetId);
       onUpdate(node.id, preset.config);
-    }
-  };
-
-  const handlePreview = async (code: string, language: 'python' | 'sql') => {
-    setPreviewLoading(true);
-    setPreviewError(null);
-
-    try {
-      // TODO: Get sample data from previous node in pipeline
-      // For now, use mock data
-      const sampleData = [
-        { id: 1, name: 'Product A', price: 100, quantity: 5 },
-        { id: 2, name: 'Product B', price: 200, quantity: 3 },
-        { id: 3, name: 'Product C', price: 150, quantity: 7 },
-      ];
-
-      const response = await fetch('/api/v1/transforms/preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
-          code,
-          language,
-          sample_data: sampleData,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Preview failed');
-      }
-
-      const result = await response.json();
-      setPreviewData(result);
-    } catch (error: any) {
-      setPreviewError(error.message || 'Preview failed');
-    } finally {
-      setPreviewLoading(false);
     }
   };
 
@@ -201,19 +158,46 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
       case 'code':
         // Determine language from format field
         const language = field.format === 'sql' ? 'sql' : 'python';
+        const hasCode = value && value.trim().length > 0;
+        const languageLabel = language === 'sql' ? 'SQL' : 'Python';
+
         return (
-          <CodeEditorField
-            key={field.name}
-            value={value}
-            onChange={(code) => handleConfigChange(field.name, code)}
-            language={language}
-            label={field.label}
-            description={field.helperText}
-            required={field.required}
-            onPreview={async (code) => {
-              await handlePreview(code, language);
-            }}
-          />
+          <Box key={field.name}>
+            <Typography variant="subtitle2" gutterBottom>
+              {field.label}
+              {field.required && <span style={{ color: 'error.main' }}> *</span>}
+            </Typography>
+            {field.helperText && (
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                {field.helperText}
+              </Typography>
+            )}
+            <Button
+              variant={hasCode ? 'outlined' : 'contained'}
+              color={hasCode ? 'success' : 'primary'}
+              fullWidth
+              size="large"
+              onClick={() => {
+                setCodeEditorField({ field, language });
+                setCodeEditorOpen(true);
+              }}
+              sx={{ py: 2, justifyContent: 'flex-start' }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CodeIcon />
+                  <Typography variant="button">
+                    {hasCode ? `Edit ${languageLabel} Code` : `Open ${languageLabel} Editor`}
+                  </Typography>
+                </Box>
+                {hasCode && (
+                  <Typography variant="caption" sx={{ mt: 0.5, opacity: 0.7 }}>
+                    ✓ Code configured ({value.split('\n').length} lines)
+                  </Typography>
+                )}
+              </Box>
+            </Button>
+          </Box>
         );
 
       case 'json':
@@ -371,31 +355,6 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
 
       <Divider />
 
-      {/* Preview Section */}
-      {(previewData || previewError || previewLoading) && (
-        <>
-          <Box sx={{ p: 2 }}>
-            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-              Transformation Preview
-            </Typography>
-            {previewLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <CircularProgress />
-              </Box>
-            )}
-            {previewError && (
-              <Alert severity="error" sx={{ mt: 1 }}>
-                {previewError}
-              </Alert>
-            )}
-            {previewData && !previewLoading && (
-              <DataPreview preview={previewData} />
-            )}
-          </Box>
-          <Divider />
-        </>
-      )}
-
       {/* Actions */}
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <Button
@@ -431,6 +390,26 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
           Delete Node
         </Button>
       </Box>
+
+      {/* Code Editor Modal */}
+      {codeEditorField && (
+        <CodeEditorModal
+          open={codeEditorOpen}
+          onClose={() => {
+            setCodeEditorOpen(false);
+            setCodeEditorField(null);
+          }}
+          value={node.data.config[codeEditorField.field.name] || codeEditorField.field.defaultValue || ''}
+          onChange={(code) => {
+            handleConfigChange(codeEditorField.field.name, code);
+          }}
+          language={codeEditorField.language}
+          label={codeEditorField.field.label}
+          onSave={(code) => {
+            handleConfigChange(codeEditorField.field.name, code);
+          }}
+        />
+      )}
     </Paper>
   );
 };
