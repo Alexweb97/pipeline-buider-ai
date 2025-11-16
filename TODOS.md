@@ -1,6 +1,6 @@
 # 📋 LogiData AI - TODO List
 
-> **Dernière mise à jour :** 2025-11-14
+> **Dernière mise à jour :** 2025-11-16
 > **Status du projet :** En développement actif
 
 ---
@@ -90,8 +90,8 @@ Plateforme ETL/ELT no-code/low-code avec assistance IA pour data engineers et d�
   - [x] Component `CodeEditorField` avec Monaco Editor
   - [x] Component `DataPreview` pour afficher résultats
   - [x] Bibliothèque de snippets (20+ Python + 10+ SQL)
-  - [ ] Intégration dans NodeConfigPanel (À FAIRE)
-  - [ ] Tabs : Code / Preview / Snippets (À FAIRE)
+  - [x] Intégration dans NodeConfigPanel ✅ **TERMINÉ** (branche: `feat/integrate-code-editor-ui`)
+  - [x] Tabs : Code / Preview / Help ✅ **TERMINÉ**
 
 - [x] **Modules** ✅ **TERMINÉ**
   - [x] Module "Python Transform" dans modules_definitions
@@ -123,6 +123,48 @@ frontend/
 - `RestrictedPython` pour sandbox Python
 - `DuckDB` pour exécution SQL
 - `@monaco-editor/react` (déjà installé)
+
+---
+
+#### 🎨 UI Integration - Code Editor
+**Status :** ✅ **TERMINÉ**
+**Branche :** `feat/integrate-code-editor-ui`
+**Priorité :** P1
+**Échéance :** 16/11/2025
+**Assigné :** Claude Code
+**Terminé le :** 2025-11-16
+
+**Tâches :**
+- [x] **Intégration NodeConfigPanel** ✅ **TERMINÉ**
+  - [x] Import CodeEditorField et DataPreview
+  - [x] Détection automatique du langage (Python/SQL) depuis format
+  - [x] Handler de preview avec appel API /transforms/preview
+  - [x] Affichage conditionnel de la section preview
+  - [x] Support CircularProgress pendant le loading
+
+- [x] **Gestion de l'état** ✅ **TERMINÉ**
+  - [x] State previewData pour stocker résultats
+  - [x] State previewLoading pour afficher loader
+  - [x] State previewError pour gérer les erreurs
+  - [x] Intégration avec onUpdate pour sauvegarder config
+
+- [x] **Nettoyage linting** ✅ **TERMINÉ**
+  - [x] Suppression imports inutilisés (React, ErrorIcon)
+  - [x] Import CircularProgress dans NodeConfigPanel
+
+**Fichiers modifiés :**
+```
+frontend/src/components/
+  NodeConfigPanel.tsx          # ✅ MODIFIÉ - Intégration complète
+  CodeEditorField.tsx          # ✅ MODIFIÉ - Fix imports
+  DataPreview.tsx              # ✅ MODIFIÉ - Fix imports
+```
+
+**Résultat :**
+- Les modules Python Transform et SQL Transform ont maintenant une UI complète
+- Preview fonctionnel avec données mockées (TODO: intégrer données réelles du pipeline)
+- Code editor avec validation, help, et preview intégrés dans le panel
+- Build sans erreurs TypeScript pour les fichiers modifiés
 
 ---
 
