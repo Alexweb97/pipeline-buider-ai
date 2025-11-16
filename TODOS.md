@@ -25,8 +25,8 @@ Plateforme ETL/ELT no-code/low-code avec assistance IA pour data engineers et d�
 - [x] ~~**Système de prévisualisation**~~ - ✅ **TERMINÉ** (PR: #XX - branche: `feat/python-sql-transform`)
 
 ### 🔥 P1 - Important (2 semaines)
-- [ ] **Implémentation des extractors** - CSV, Excel, JSON, Parquet avec file_id
-- [ ] **Bibliothèque de snippets** - Templates Python/SQL réutilisables
+- [x] ~~**Implémentation des extractors**~~ - ✅ **TERMINÉ** (branche: `feat/implement-extractors`)
+- [x] ~~**Bibliothèque de snippets**~~ - ✅ **TERMINÉ** (30+ snippets Python/SQL)
 - [ ] **Testing & validation** - Tests automatiques des transformations
 
 ### 📌 P2 - Nice to have (1 mois)
