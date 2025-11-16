@@ -2,7 +2,7 @@
  * Code Editor Field Component
  * Monaco-based code editor for Python/SQL transformations
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import {
   Box,
@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
 
 interface CodeEditorFieldProps {
   value: string;

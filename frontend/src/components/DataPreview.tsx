@@ -2,7 +2,6 @@
  * Data Preview Component
  * Displays transformation results with schema and statistics
  */
-import React from 'react';
 import {
   Box,
   Typography,
