@@ -64,6 +64,8 @@ function parseConfigSchema(schema: Record<string, any>): ConfigField[] {
       required: schema.required?.includes(key) || false,
       helperText: value.description,
       defaultValue: value.default,
+      format: value.format,
+      accept: value.accept, // For file-upload fields
     };
 
     // Handle enum options
@@ -103,9 +105,11 @@ function extractDefaultConfig(schema: Record<string, any>): Record<string, any> 
  * Map JSON Schema type to ConfigField type
  */
 function mapSchemaTypeToFieldType(type: string, format?: string): ConfigField['type'] {
-  // ConfigField only supports: 'text' | 'number' | 'select' | 'boolean' | 'json' | 'code'
+  // ConfigField supports: 'text' | 'number' | 'select' | 'boolean' | 'json' | 'code' | 'file-upload'
+  if (format === 'file-upload') return 'file-upload'; // File upload field
   if (format === 'password') return 'text'; // Use text for passwords (can be enhanced with input type)
   if (format === 'uri' || format === 'url') return 'text';
+  if (format === 'code' || format === 'sql') return 'code'; // Code editor
 
   switch (type) {
     case 'string':

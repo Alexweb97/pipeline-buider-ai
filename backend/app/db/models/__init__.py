@@ -9,6 +9,7 @@ from app.db.models.module import Module
 from app.db.models.auth_log import AuthLog
 from app.db.models.active_session import ActiveSession
 from app.db.models.audit_event import AuditEvent
+from app.db.models.uploaded_file import UploadedFile
 
 __all__ = [
     "User",
@@ -19,4 +20,5 @@ __all__ = [
     "AuthLog",
     "ActiveSession",
     "AuditEvent",
+    "UploadedFile",
 ]

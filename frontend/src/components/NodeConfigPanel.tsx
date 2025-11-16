@@ -23,6 +23,7 @@ import { Close, Delete, ContentCopy, Bookmarks, SaveAs } from '@mui/icons-materi
 import { PipelineNode } from '../types/pipelineBuilder';
 import { usePipelineStore } from '../stores/pipelineStore';
 import { mapModulesToDefinitions } from '../utils/moduleMapper';
+import FileUploadField from './FileUploadField';
 
 interface NodeConfigPanelProps {
   node: PipelineNode | null;
@@ -167,6 +168,19 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
             placeholder={field.placeholder}
             helperText={field.helperText}
             sx={{ fontFamily: 'monospace' }}
+          />
+        );
+
+      case 'file-upload':
+        return (
+          <FileUploadField
+            key={field.name}
+            label={field.label}
+            value={value}
+            onChange={(fileId) => handleConfigChange(field.name, fileId)}
+            accept={field.accept}
+            description={field.helperText}
+            required={field.required}
           />
         );
 
