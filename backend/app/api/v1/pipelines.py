@@ -427,3 +427,169 @@ def validate_config(
         "errors": errors,
         "warnings": warnings,
     }
+
+
+@router.post("/preview-node/{node_id}")
+async def preview_node_output(
+    node_id: str,
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)] = None,
+):
+    """
+    Preview the output data of a specific node in the pipeline
+
+    This executes the pipeline up to the specified node and returns
+    the data preview including schema, statistics, and sample rows.
+    """
+    import pandas as pd
+    from app.data.modules_definitions import get_module_definition
+
+    try:
+        # Parse request body
+        body = await request.json()
+        node = body.get("node")
+        nodes = body.get("nodes", [])
+        edges = body.get("edges", [])
+
+        if not node:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Node data is required"
+            )
+
+        # Build execution path from extractors to target node
+        execution_order = []
+        visited = set()
+
+        def build_path(target_id: str):
+            if target_id in visited:
+                return
+            visited.add(target_id)
+
+            # Find incoming edges
+            incoming = [e for e in edges if e.get("target") == target_id]
+
+            # Process parent nodes first
+            for edge in incoming:
+                source_id = edge.get("source")
+                if source_id:
+                    build_path(source_id)
+
+            # Add current node
+            current_node = next((n for n in nodes if n.get("id") == target_id), None)
+            if current_node:
+                execution_order.append(current_node)
+
+        build_path(node_id)
+
+        if not execution_order:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Could not build execution path to node"
+            )
+
+        # Execute pipeline up to target node
+        data = None
+
+        for exec_node in execution_order:
+            node_type = exec_node.get("type")
+            node_data = exec_node.get("data", {})
+            module_id = node_data.get("moduleId")
+            config = node_data.get("config", {})
+
+            # Get module definition
+            module_def = get_module_definition(module_id)
+            if not module_def:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Module {module_id} not found"
+                )
+
+            # Execute based on node type
+            if node_type == "extractor":
+                # For extractors, we need sample data
+                # In a real implementation, this would extract from the actual source
+                # For now, create sample data
+                data = pd.DataFrame({
+                    "id": range(1, 101),
+                    "name": [f"Sample {i}" for i in range(1, 101)],
+                    "value": [i * 10 for i in range(1, 101)],
+                    "category": ["A" if i % 2 == 0 else "B" for i in range(1, 101)],
+                })
+
+            elif node_type == "transformer":
+                if data is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Transformer requires input data"
+                    )
+
+                # Execute transformation
+                if module_id == "python-transformer":
+                    code = config.get("transformation_code", "")
+                    if code:
+                        from app.core.code_executor import CodeExecutor
+                        executor = CodeExecutor()
+                        result = executor.execute(code, data)
+                        data = result["output"]
+
+                elif module_id == "sql-transformer":
+                    query = config.get("sql_query", "")
+                    if query:
+                        from app.modules.transformers.sql_transform import SQLTransformer
+                        transformer = SQLTransformer()
+                        data = transformer.transform(data, {"query": query})
+
+            elif node_type == "loader":
+                # For preview, we just pass through the data
+                # In real execution, this would load to destination
+                pass
+
+        # Generate preview response
+        if data is None or data.empty:
+            return {
+                "success": False,
+                "error": "No data available",
+                "error_type": "NoDataError"
+            }
+
+        # Calculate statistics
+        input_shape = list(data.shape)
+        output_shape = list(data.shape)
+
+        # Get column info
+        schema = {}
+        for col in data.columns:
+            col_data = data[col]
+            schema[col] = {
+                "dtype": str(col_data.dtype),
+                "null_count": int(col_data.isna().sum()),
+                "unique_count": int(col_data.nunique()),
+            }
+
+        # Get preview data (first 10 rows)
+        preview_rows = data.head(10).to_dict(orient="records")
+
+        return {
+            "success": True,
+            "input_shape": input_shape,
+            "output_shape": output_shape,
+            "input_columns": list(data.columns),
+            "output_columns": list(data.columns),
+            "preview_data": preview_rows,
+            "schema": schema,
+            "statistics": {
+                "total_rows": len(data),
+                "total_columns": len(data.columns),
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Preview failed: {str(e)}"
+        )

@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Error as ErrorIcon,
   HourglassEmpty,
+  Visibility,
 } from '@mui/icons-material';
 import { PipelineNode } from '../../types/pipelineBuilder';
 
@@ -50,9 +51,16 @@ const statusIcons = {
   error: <ErrorIcon fontSize="small" />,
 };
 
-export const CustomNode = memo(({ data, selected }: NodeProps<PipelineNode['data']>) => {
+export const CustomNode = memo(({ data, selected, id }: NodeProps<PipelineNode['data']>) => {
   const showInputHandle = data.inputs !== 0;
   const showOutputHandle = data.outputs !== 0;
+
+  const handlePreviewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (data.onPreview) {
+      data.onPreview(id);
+    }
+  };
 
   return (
     <Paper
@@ -144,6 +152,27 @@ export const CustomNode = memo(({ data, selected }: NodeProps<PipelineNode['data
                 },
               }}
             />
+          </Box>
+        )}
+
+        {/* Preview Button */}
+        {data.onPreview && (
+          <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'center' }}>
+            <IconButton
+              size="small"
+              onClick={handlePreviewClick}
+              sx={{
+                p: 0.5,
+                bgcolor: 'action.hover',
+                '&:hover': {
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                },
+              }}
+              title="Preview output data"
+            >
+              <Visibility sx={{ fontSize: 14 }} />
+            </IconButton>
           </Box>
         )}
       </Box>

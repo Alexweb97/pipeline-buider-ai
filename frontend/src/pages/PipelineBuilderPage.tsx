@@ -45,6 +45,7 @@ import {
 import { CustomNode } from '../components/nodes/CustomNode';
 import { ModulePalette } from '../components/ModulePalette';
 import { NodeConfigPanel } from '../components/NodeConfigPanel';
+import NodePreviewModal from '../components/NodePreviewModal';
 import { PipelineNode, ModuleDefinition, PipelineSaveData } from '../types/pipelineBuilder';
 
 const nodeTypes = {
@@ -64,6 +65,8 @@ const PipelineBuilderContent: React.FC = () => {
   const [pipelineName, setPipelineName] = useState('');
   const [pipelineDescription, setPipelineDescription] = useState('');
   const [pipelineType, setPipelineType] = useState<'etl' | 'elt' | 'streaming'>('etl');
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewNode, setPreviewNode] = useState<PipelineNode | null>(null);
 
   // Handle edge connections
   const onConnect = useCallback(
@@ -88,6 +91,15 @@ const PipelineBuilderContent: React.FC = () => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
+
+  // Handle node preview
+  const handleNodePreview = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node) {
+      setPreviewNode(node as unknown as PipelineNode);
+      setPreviewModalOpen(true);
+    }
+  }, [nodes]);
 
   // Handle drop module onto canvas
   const onDrop = useCallback(
@@ -120,12 +132,13 @@ const PipelineBuilderContent: React.FC = () => {
           status: 'idle',
           inputs: module.type === 'extractor' ? 0 : undefined,
           outputs: module.type === 'loader' ? 0 : undefined,
+          onPreview: handleNodePreview,
         },
       };
 
       setNodes((nds) => [...nds, newNode as Node]);
     },
-    [reactFlowInstance, nodes, setNodes]
+    [reactFlowInstance, nodes, setNodes, handleNodePreview]
   );
 
   // Handle drag start from palette
@@ -383,6 +396,20 @@ const PipelineBuilderContent: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Node Preview Modal */}
+      {previewNode && (
+        <NodePreviewModal
+          open={previewModalOpen}
+          onClose={() => {
+            setPreviewModalOpen(false);
+            setPreviewNode(null);
+          }}
+          node={previewNode}
+          nodes={nodes as unknown as PipelineNode[]}
+          edges={edges}
+        />
+      )}
     </Box>
   );
 };
