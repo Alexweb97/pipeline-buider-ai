@@ -57,10 +57,15 @@ function parseConfigSchema(schema: Record<string, any>): ConfigField[] {
   }
 
   for (const [key, value] of Object.entries(schema.properties as Record<string, any>)) {
+    // Determine the field type - if enum exists, it should be a select field
+    const fieldType = value.enum
+      ? 'select'
+      : mapSchemaTypeToFieldType(value.type, value.format);
+
     const field: ConfigField = {
       name: key,
       label: value.title || formatLabel(key),
-      type: mapSchemaTypeToFieldType(value.type, value.format),
+      type: fieldType,
       required: schema.required?.includes(key) || false,
       helperText: value.description,
       defaultValue: value.default,
