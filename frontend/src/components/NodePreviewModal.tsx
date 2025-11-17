@@ -68,12 +68,29 @@ export default function NodePreviewModal({
     setError(null);
 
     try {
+      // Remove onPreview callbacks from nodes before sending to backend
+      const cleanNode = {
+        ...node,
+        data: {
+          ...node.data,
+          onPreview: undefined,
+        },
+      };
+
+      const cleanNodes = nodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onPreview: undefined,
+        },
+      }));
+
       // Build the pipeline path up to this node
       const response: any = await apiClient.post(
         `/api/v1/pipelines/preview-node/${node.id}`,
         {
-          node,
-          nodes,
+          node: cleanNode,
+          nodes: cleanNodes,
           edges,
         }
       );

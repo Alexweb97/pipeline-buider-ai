@@ -451,6 +451,11 @@ async def preview_node_output(
         nodes = body.get("nodes", [])
         edges = body.get("edges", [])
 
+        print(f"[DEBUG] Preview request for node_id: {node_id}")
+        print(f"[DEBUG] Node data: {node}")
+        print(f"[DEBUG] Number of nodes: {len(nodes)}")
+        print(f"[DEBUG] Number of edges: {len(edges)}")
+
         if not node:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
