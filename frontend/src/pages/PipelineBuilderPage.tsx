@@ -68,6 +68,15 @@ const PipelineBuilderContent: React.FC = () => {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewNode, setPreviewNode] = useState<PipelineNode | null>(null);
 
+  // Handle node preview - defined early to avoid hoisting issues
+  const handleNodePreview = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node) {
+      setPreviewNode(node as unknown as PipelineNode);
+      setPreviewModalOpen(true);
+    }
+  }, [nodes]);
+
   // Sync selectedNode with nodes array when it changes
   React.useEffect(() => {
     if (selectedNode) {
@@ -77,6 +86,19 @@ const PipelineBuilderContent: React.FC = () => {
       }
     }
   }, [nodes, selectedNode?.id]);
+
+  // Ensure all nodes have the onPreview callback
+  React.useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onPreview: handleNodePreview,
+        },
+      }))
+    );
+  }, [handleNodePreview, setNodes]);
 
   // Handle edge connections
   const onConnect = useCallback(
@@ -101,15 +123,6 @@ const PipelineBuilderContent: React.FC = () => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
-
-  // Handle node preview
-  const handleNodePreview = useCallback((nodeId: string) => {
-    const node = nodes.find((n) => n.id === nodeId);
-    if (node) {
-      setPreviewNode(node as unknown as PipelineNode);
-      setPreviewModalOpen(true);
-    }
-  }, [nodes]);
 
   // Handle drop module onto canvas
   const onDrop = useCallback(
