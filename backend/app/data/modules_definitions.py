@@ -339,3 +339,19 @@ LIMIT 1000"""
         "tags": ["sql", "duckdb", "query", "custom"],
     },
 ]
+
+
+def get_module_definition(module_name: str) -> dict | None:
+    """
+    Get module definition by name
+
+    Args:
+        module_name: The module name (e.g., 'python-transformer', 'csv-extractor')
+
+    Returns:
+        Module definition dict or None if not found
+    """
+    for module in MODULES_DATA:
+        if module.get("name") == module_name:
+            return module
+    return None

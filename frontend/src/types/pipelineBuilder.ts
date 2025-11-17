@@ -66,6 +66,7 @@ export interface PipelineNode extends Node {
     status?: 'idle' | 'running' | 'success' | 'error';
     outputs?: number;
     inputs?: number;
+    onPreview?: (nodeId: string) => void;
   };
 }
 
