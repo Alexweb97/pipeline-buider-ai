@@ -68,6 +68,16 @@ const PipelineBuilderContent: React.FC = () => {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewNode, setPreviewNode] = useState<PipelineNode | null>(null);
 
+  // Sync selectedNode with nodes array when it changes
+  React.useEffect(() => {
+    if (selectedNode) {
+      const updatedNode = nodes.find((n) => n.id === selectedNode.id);
+      if (updatedNode) {
+        setSelectedNode(updatedNode as unknown as PipelineNode);
+      }
+    }
+  }, [nodes, selectedNode?.id]);
+
   // Handle edge connections
   const onConnect = useCallback(
     (params: Connection) => {
