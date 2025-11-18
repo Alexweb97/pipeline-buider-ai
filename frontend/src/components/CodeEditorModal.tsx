@@ -28,7 +28,7 @@ import {
   Help as HelpIcon,
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
-import Editor, { Monaco } from '@monaco-editor/react';
+import Editor from '@monaco-editor/react';
 import DataPreview from './DataPreview';
 
 interface CodeEditorModalProps {
@@ -92,6 +92,19 @@ export default function CodeEditorModal({
           language: language,
         }),
       });
+
+      if (!response.ok) {
+        // If endpoint doesn't exist or returns error
+        if (response.status === 404) {
+          setValidationResult({
+            valid: false,
+            error: 'Validation endpoint not available. Use Test & Preview to validate your code.',
+          });
+          return;
+        }
+        const errorText = await response.text();
+        throw new Error(errorText || 'Validation failed');
+      }
 
       const result = await response.json();
       setValidationResult(result);
