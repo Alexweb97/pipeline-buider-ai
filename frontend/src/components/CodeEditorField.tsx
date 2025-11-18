@@ -3,7 +3,7 @@
  * Monaco-based code editor for Python/SQL transformations
  */
 import { useState } from 'react';
-import Editor from '@monaco-editor/react';
+import Editor, { Monaco } from '@monaco-editor/react';
 import {
   Box,
   Button,
@@ -88,6 +88,15 @@ export default function CodeEditorField({
     return 'plaintext';
   };
 
+  const handleEditorWillMount = (monaco: Monaco) => {
+    // Configure Monaco before it mounts
+    console.log('Monaco editor will mount', monaco);
+  };
+
+  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+    console.log('Monaco editor mounted successfully');
+  };
+
   return (
     <Box sx={{ width: '100%' }}>
       {label && (
@@ -121,6 +130,9 @@ export default function CodeEditorField({
               value={code}
               onChange={handleCodeChange}
               theme="vs-dark"
+              beforeMount={handleEditorWillMount}
+              onMount={handleEditorDidMount}
+              loading={<Box sx={{ p: 3, textAlign: 'center' }}>Loading editor...</Box>}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,

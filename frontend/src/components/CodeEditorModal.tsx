@@ -28,7 +28,7 @@ import {
   Help as HelpIcon,
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
-import Editor from '@monaco-editor/react';
+import Editor, { Monaco } from '@monaco-editor/react';
 import DataPreview from './DataPreview';
 
 interface CodeEditorModalProps {
@@ -152,6 +152,23 @@ export default function CodeEditorModal({
     return 'plaintext';
   };
 
+  const handleEditorWillMount = (monaco: Monaco) => {
+    // Configure Monaco before it mounts
+    console.log('Monaco editor will mount', monaco);
+
+    // Ensure themes are available
+    monaco.editor.defineTheme('vs-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [],
+      colors: {}
+    });
+  };
+
+  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+    console.log('Monaco editor mounted successfully');
+  };
+
   return (
     <Dialog
       open={open}
@@ -221,6 +238,9 @@ export default function CodeEditorModal({
                 value={code}
                 onChange={handleCodeChange}
                 theme="vs-dark"
+                beforeMount={handleEditorWillMount}
+                onMount={handleEditorDidMount}
+                loading={<Box sx={{ p: 3, textAlign: 'center' }}>Loading editor...</Box>}
                 options={{
                   minimap: { enabled: true },
                   fontSize: 14,
