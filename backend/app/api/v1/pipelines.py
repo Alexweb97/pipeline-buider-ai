@@ -728,8 +728,13 @@ async def preview_node_output(
                     query = config.get("sql_query", "")
                     if query:
                         from app.modules.transformers.sql_transform import SQLTransformer
-                        transformer = SQLTransformer()
-                        data = transformer.transform(data, {"query": query})
+                        transformer = SQLTransformer({"query": query})
+                        data = transformer.execute(data)
+
+                elif module_id == "clean-transformer":
+                    from app.modules.transformers.clean import CleanTransformer
+                    transformer = CleanTransformer(config)
+                    data = transformer.execute(data)
 
             elif node_type == "loader":
                 # For preview, we just pass through the data

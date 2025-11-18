@@ -418,6 +418,44 @@ LIMIT 1000"""
         },
         "tags": ["sql", "duckdb", "query", "custom"],
     },
+
+    # ============================================================================
+    # TRANSFORMERS - Data Quality (1 module)
+    # ============================================================================
+
+    {
+        "name": "clean-transformer",
+        "display_name": "Data Cleaning",
+        "description": "Clean and normalize data with various cleaning operations",
+        "type": "transformer",
+        "category": "transform",
+        "python_class": "app.modules.transformers.clean.CleanTransformer",
+        "icon": "FilterAlt",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "trim_whitespace": {
+                    "type": "boolean",
+                    "title": "Trim Whitespace",
+                    "description": "Remove leading and trailing whitespace from string columns",
+                    "default": True
+                },
+                "remove_nulls": {
+                    "type": "boolean",
+                    "title": "Remove Null Rows",
+                    "description": "Remove rows that contain any null values",
+                    "default": False
+                },
+                "lowercase_columns": {
+                    "type": "boolean",
+                    "title": "Lowercase Column Names",
+                    "description": "Convert all column names to lowercase",
+                    "default": False
+                }
+            }
+        },
+        "tags": ["data-quality", "cleaning", "normalization"],
+    },
 ]
 
 
