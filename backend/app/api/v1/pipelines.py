@@ -744,10 +744,6 @@ async def preview_node_output(
                 "error_type": "NoDataError"
             }
 
-        # Replace Infinity and -Infinity with NaN for consistent handling
-        import numpy as np
-        data = data.replace([np.inf, -np.inf], np.nan)
-
         # Calculate statistics
         input_shape = list(data.shape)
         output_shape = list(data.shape)
@@ -774,7 +770,11 @@ async def preview_node_output(
         # Convert to dict with proper NaN/Inf handling for JSON serialization
         preview_df = data.head(10)
 
-        # Custom function to clean values for JSON serialization
+        # Import numpy for NaN/Inf detection in JSON serialization
+        import numpy as np
+
+        # Custom function to clean values for JSON serialization only
+        # Note: This does NOT modify the actual data, only the preview display
         def clean_value(val):
             if pd.isna(val):
                 return None
