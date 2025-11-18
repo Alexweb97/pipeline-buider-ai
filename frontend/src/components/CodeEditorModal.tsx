@@ -28,15 +28,8 @@ import {
   Help as HelpIcon,
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
-import Editor, { loader } from '@monaco-editor/react';
+import Editor, { Monaco } from '@monaco-editor/react';
 import DataPreview from './DataPreview';
-
-// Configure Monaco Editor loader
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-  }
-});
 
 interface CodeEditorModalProps {
   open: boolean;
@@ -159,6 +152,10 @@ export default function CodeEditorModal({
     return 'plaintext';
   };
 
+  const handleEditorDidMount = () => {
+    console.log('Monaco editor mounted successfully');
+  };
+
   return (
     <Dialog
       open={open}
@@ -228,6 +225,7 @@ export default function CodeEditorModal({
                 value={code}
                 onChange={handleCodeChange}
                 theme="vs-dark"
+                onMount={handleEditorDidMount}
                 options={{
                   minimap: { enabled: true },
                   fontSize: 14,
