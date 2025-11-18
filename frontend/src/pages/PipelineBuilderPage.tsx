@@ -1,8 +1,8 @@
 /**
  * Pipeline Builder Page - Visual drag & drop pipeline editor
  */
-import React, { useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactFlow, {
   addEdge,
   Background,
@@ -47,6 +47,7 @@ import { ModulePalette } from '../components/ModulePalette';
 import { NodeConfigPanel } from '../components/NodeConfigPanel';
 import NodePreviewModal from '../components/NodePreviewModal';
 import { PipelineNode, ModuleDefinition, PipelineSaveData } from '../types/pipelineBuilder';
+import { apiClient } from '../api/client';
 
 const nodeTypes = {
   extractor: CustomNode,
@@ -56,6 +57,7 @@ const nodeTypes = {
 
 const PipelineBuilderContent: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -67,6 +69,45 @@ const PipelineBuilderContent: React.FC = () => {
   const [pipelineType, setPipelineType] = useState<'etl' | 'elt' | 'streaming'>('etl');
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewNode, setPreviewNode] = useState<PipelineNode | null>(null);
+  const [pipelineId, setPipelineId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Load pipeline from URL parameter if editing existing pipeline
+  useEffect(() => {
+    const loadPipeline = async () => {
+      const id = searchParams.get('id');
+      if (!id) return;
+
+      setLoading(true);
+      try {
+        const pipeline = await apiClient.get(`/api/v1/pipelines/${id}`);
+        console.log('Loaded pipeline:', pipeline);
+
+        // Set pipeline metadata
+        setPipelineId(pipeline.id);
+        setPipelineName(pipeline.name);
+        setPipelineDescription(pipeline.description || '');
+
+        // Load nodes and edges from config
+        if (pipeline.config?.nodes) {
+          setNodes(pipeline.config.nodes);
+        }
+        if (pipeline.config?.edges) {
+          setEdges(pipeline.config.edges);
+        }
+        if (pipeline.config?.type) {
+          setPipelineType(pipeline.config.type);
+        }
+      } catch (error: any) {
+        console.error('Failed to load pipeline:', error);
+        alert(`Failed to load pipeline: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPipeline();
+  }, [searchParams, setNodes, setEdges]);
 
   // Handle node preview - defined early to avoid hoisting issues
   const handleNodePreview = useCallback((nodeId: string) => {
@@ -218,19 +259,53 @@ const PipelineBuilderContent: React.FC = () => {
   };
 
   // Save pipeline
-  const handleSave = () => {
-    const pipelineData: PipelineSaveData = {
-      name: pipelineName,
-      description: pipelineDescription,
-      type: pipelineType,
-      nodes: nodes as any,
-      edges: edges as any,
-    };
+  const handleSave = async () => {
+    try {
+      // Clean nodes by removing onPreview callbacks
+      const cleanNodes = nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onPreview: undefined,
+        },
+      }));
 
-    console.log('Saving pipeline:', pipelineData);
-    // TODO: Call API to save pipeline
-    setSaveDialogOpen(false);
-    alert(`Pipeline "${pipelineName}" saved successfully!`);
+      const pipelineData = {
+        name: pipelineName,
+        description: pipelineDescription,
+        config: {
+          nodes: cleanNodes,
+          edges: edges,
+          type: pipelineType,
+        },
+        tags: [],
+      };
+
+      console.log('Saving pipeline:', pipelineData);
+
+      let response;
+      if (pipelineId) {
+        // Update existing pipeline
+        response = await apiClient.put(`/api/v1/pipelines/${pipelineId}`, pipelineData);
+        console.log('Pipeline updated successfully:', response);
+      } else {
+        // Create new pipeline
+        response = await apiClient.post('/api/v1/pipelines', pipelineData);
+        console.log('Pipeline created successfully:', response);
+        // Store the new pipeline ID for future updates
+        setPipelineId(response.id);
+      }
+
+      setSaveDialogOpen(false);
+
+      // Show success message
+      alert(`Pipeline "${pipelineName}" ${pipelineId ? 'updated' : 'saved'} successfully!`);
+
+      // Optionally: navigate to pipelines list or show a success snackbar
+    } catch (error: any) {
+      console.error('Failed to save pipeline:', error);
+      alert(`Failed to save pipeline: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+    }
   };
 
   // Execute pipeline
@@ -239,6 +314,17 @@ const PipelineBuilderContent: React.FC = () => {
     // TODO: Call API to execute pipeline
     alert('Pipeline execution started!');
   };
+
+  // Show loading state while pipeline is being loaded
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h6" gutterBottom>
+          Loading pipeline...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>

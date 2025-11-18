@@ -728,8 +728,13 @@ async def preview_node_output(
                     query = config.get("sql_query", "")
                     if query:
                         from app.modules.transformers.sql_transform import SQLTransformer
-                        transformer = SQLTransformer()
-                        data = transformer.transform(data, {"query": query})
+                        transformer = SQLTransformer({"query": query})
+                        data = transformer.execute(data)
+
+                elif module_id == "clean-transformer":
+                    from app.modules.transformers.clean import CleanTransformer
+                    transformer = CleanTransformer(config)
+                    data = transformer.execute(data)
 
             elif node_type == "loader":
                 # For preview, we just pass through the data
@@ -743,10 +748,6 @@ async def preview_node_output(
                 "error": "No data available",
                 "error_type": "NoDataError"
             }
-
-        # Replace Infinity and -Infinity with NaN for consistent handling
-        import numpy as np
-        data = data.replace([np.inf, -np.inf], np.nan)
 
         # Calculate statistics
         input_shape = list(data.shape)
@@ -774,7 +775,11 @@ async def preview_node_output(
         # Convert to dict with proper NaN/Inf handling for JSON serialization
         preview_df = data.head(10)
 
-        # Custom function to clean values for JSON serialization
+        # Import numpy for NaN/Inf detection in JSON serialization
+        import numpy as np
+
+        # Custom function to clean values for JSON serialization only
+        # Note: This does NOT modify the actual data, only the preview display
         def clean_value(val):
             if pd.isna(val):
                 return None
