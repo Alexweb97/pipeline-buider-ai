@@ -72,6 +72,9 @@ const PipelineBuilderContent: React.FC = () => {
   const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Create a stable reference for handleNodePreview to avoid infinite loops
+  const handleNodePreviewRef = useRef<(nodeId: string) => void>(() => {});
+
   // Load pipeline from URL parameter if editing existing pipeline
   useEffect(() => {
     const loadPipeline = async () => {
@@ -90,7 +93,15 @@ const PipelineBuilderContent: React.FC = () => {
 
         // Load nodes and edges from config
         if (pipeline.config?.nodes) {
-          setNodes(pipeline.config.nodes);
+          // Add onPreview callback to loaded nodes
+          const nodesWithPreview = pipeline.config.nodes.map((node: PipelineNode) => ({
+            ...node,
+            data: {
+              ...node.data,
+              onPreview: handleNodePreviewRef.current,
+            },
+          }));
+          setNodes(nodesWithPreview);
         }
         if (pipeline.config?.edges) {
           setEdges(pipeline.config.edges);
@@ -111,12 +122,21 @@ const PipelineBuilderContent: React.FC = () => {
 
   // Handle node preview - defined early to avoid hoisting issues
   const handleNodePreview = useCallback((nodeId: string) => {
-    const node = nodes.find((n) => n.id === nodeId);
-    if (node) {
-      setPreviewNode(node as unknown as PipelineNode);
-      setPreviewModalOpen(true);
-    }
-  }, [nodes]);
+    // Use setNodes with function form to get current nodes without dependency
+    setNodes((currentNodes) => {
+      const node = currentNodes.find((n) => n.id === nodeId);
+      if (node) {
+        setPreviewNode(node as unknown as PipelineNode);
+        setPreviewModalOpen(true);
+      }
+      return currentNodes; // Don't modify nodes, just read them
+    });
+  }, [setNodes]);
+
+  // Update the ref whenever handleNodePreview changes
+  useEffect(() => {
+    handleNodePreviewRef.current = handleNodePreview;
+  }, [handleNodePreview]);
 
   // Sync selectedNode with nodes array when it changes
   React.useEffect(() => {
@@ -128,18 +148,8 @@ const PipelineBuilderContent: React.FC = () => {
     }
   }, [nodes, selectedNode?.id]);
 
-  // Ensure all nodes have the onPreview callback
-  React.useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onPreview: handleNodePreview,
-        },
-      }))
-    );
-  }, [handleNodePreview, setNodes]);
+  // Note: onPreview is now added when nodes are created in onDrop handler
+  // This avoids the infinite loop caused by updating all nodes on every render
 
   // Handle edge connections
   const onConnect = useCallback(
@@ -196,7 +206,7 @@ const PipelineBuilderContent: React.FC = () => {
           status: 'idle',
           inputs: module.type === 'extractor' ? 0 : undefined,
           outputs: module.type === 'loader' ? 0 : undefined,
-          onPreview: handleNodePreview,
+          onPreview: handleNodePreviewRef.current,
         },
       };
 

@@ -28,7 +28,7 @@ import {
   Help as HelpIcon,
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
-import Editor, { Monaco } from '@monaco-editor/react';
+import Editor from '@monaco-editor/react';
 import DataPreview from './DataPreview';
 
 interface CodeEditorModalProps {
@@ -39,6 +39,7 @@ interface CodeEditorModalProps {
   language: 'python' | 'sql';
   label?: string;
   onSave?: (code: string) => void;
+  onPreview?: (code: string) => Promise<void>;
 }
 
 export default function CodeEditorModal({
@@ -49,6 +50,7 @@ export default function CodeEditorModal({
   language,
   label = 'Code Editor',
   onSave,
+  onPreview,
 }: CodeEditorModalProps) {
   const [code, setCode] = useState(value || '');
   const [activeTab, setActiveTab] = useState(0);
@@ -93,6 +95,19 @@ export default function CodeEditorModal({
         }),
       });
 
+      if (!response.ok) {
+        // If endpoint doesn't exist or returns error
+        if (response.status === 404) {
+          setValidationResult({
+            valid: false,
+            error: 'Validation endpoint not available. Use Test & Preview to validate your code.',
+          });
+          return;
+        }
+        const errorText = await response.text();
+        throw new Error(errorText || 'Validation failed');
+      }
+
       const result = await response.json();
       setValidationResult(result);
     } catch (error: any) {
@@ -106,43 +121,50 @@ export default function CodeEditorModal({
   };
 
   const handlePreview = async () => {
-    setPreviewLoading(true);
-    setPreviewError(null);
-    setPreviewData(null);
+    if (onPreview) {
+      // Use the onPreview callback provided by parent (NodeConfigPanel)
+      // This will trigger the node preview which executes the full pipeline
+      await onPreview(code);
+    } else {
+      // Fallback to old behavior if no onPreview callback provided
+      setPreviewLoading(true);
+      setPreviewError(null);
+      setPreviewData(null);
 
-    try {
-      // Mock data for preview
-      const sampleData = [
-        { id: 1, name: 'Product A', price: 100, quantity: 5 },
-        { id: 2, name: 'Product B', price: 200, quantity: 3 },
-        { id: 3, name: 'Product C', price: 150, quantity: 7 },
-      ];
+      try {
+        // Mock data for preview
+        const sampleData = [
+          { id: 1, name: 'Product A', price: 100, quantity: 5 },
+          { id: 2, name: 'Product B', price: 200, quantity: 3 },
+          { id: 3, name: 'Product C', price: 150, quantity: 7 },
+        ];
 
-      const response = await fetch('/api/v1/transforms/preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
-          code,
-          language,
-          sample_data: sampleData,
-        }),
-      });
+        const response = await fetch('/api/v1/transforms/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: JSON.stringify({
+            code,
+            language,
+            sample_data: sampleData,
+          }),
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Preview failed');
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Preview failed');
+        }
+
+        const result = await response.json();
+        setPreviewData(result);
+        setActiveTab(2); // Switch to preview tab
+      } catch (error: any) {
+        setPreviewError(error.message || 'Preview failed');
+      } finally {
+        setPreviewLoading(false);
       }
-
-      const result = await response.json();
-      setPreviewData(result);
-      setActiveTab(2); // Switch to preview tab
-    } catch (error: any) {
-      setPreviewError(error.message || 'Preview failed');
-    } finally {
-      setPreviewLoading(false);
     }
   };
 

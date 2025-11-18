@@ -717,12 +717,11 @@ async def preview_node_output(
 
                 # Execute transformation
                 if module_id == "python-transformer":
-                    code = config.get("transformation_code", "")
+                    code = config.get("code", "")
                     if code:
-                        from app.core.code_executor import CodeExecutor
-                        executor = CodeExecutor()
-                        result = executor.execute(code, data)
-                        data = result["output"]
+                        from app.modules.transformers.python_transform import PythonTransformer
+                        transformer = PythonTransformer(config)
+                        data = transformer.execute(data)
 
                 elif module_id == "sql-transformer":
                     query = config.get("sql_query", "")
