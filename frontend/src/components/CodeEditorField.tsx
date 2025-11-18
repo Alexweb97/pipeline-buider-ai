@@ -88,12 +88,7 @@ export default function CodeEditorField({
     return 'plaintext';
   };
 
-  const handleEditorWillMount = (monaco: Monaco) => {
-    // Configure Monaco before it mounts
-    console.log('Monaco editor will mount', monaco);
-  };
-
-  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+  const handleEditorDidMount = () => {
     console.log('Monaco editor mounted successfully');
   };
 
@@ -130,9 +125,7 @@ export default function CodeEditorField({
               value={code}
               onChange={handleCodeChange}
               theme="vs-dark"
-              beforeMount={handleEditorWillMount}
               onMount={handleEditorDidMount}
-              loading={<Box sx={{ p: 3, textAlign: 'center' }}>Loading editor...</Box>}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
