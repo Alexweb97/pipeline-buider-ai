@@ -411,9 +411,14 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
           onPreview={async (code) => {
             // Update config with current code before preview
             handleConfigChange(codeEditorField.field.name, code);
+            // Close the code editor modal first
+            setCodeEditorOpen(false);
+            setCodeEditorField(null);
+            // Wait a bit for state to update
+            await new Promise<void>(resolve => setTimeout(() => resolve(), 100));
             // Trigger node preview if available
             if (node.data.onPreview) {
-              await node.data.onPreview();
+              node.data.onPreview(node.id);
             }
           }}
         />
