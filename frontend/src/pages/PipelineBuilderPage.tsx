@@ -47,6 +47,7 @@ import { ModulePalette } from '../components/ModulePalette';
 import { NodeConfigPanel } from '../components/NodeConfigPanel';
 import NodePreviewModal from '../components/NodePreviewModal';
 import { PipelineNode, ModuleDefinition, PipelineSaveData } from '../types/pipelineBuilder';
+import { apiClient } from '../api/client';
 
 const nodeTypes = {
   extractor: CustomNode,
@@ -218,19 +219,43 @@ const PipelineBuilderContent: React.FC = () => {
   };
 
   // Save pipeline
-  const handleSave = () => {
-    const pipelineData: PipelineSaveData = {
-      name: pipelineName,
-      description: pipelineDescription,
-      type: pipelineType,
-      nodes: nodes as any,
-      edges: edges as any,
-    };
+  const handleSave = async () => {
+    try {
+      // Clean nodes by removing onPreview callbacks
+      const cleanNodes = nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onPreview: undefined,
+        },
+      }));
 
-    console.log('Saving pipeline:', pipelineData);
-    // TODO: Call API to save pipeline
-    setSaveDialogOpen(false);
-    alert(`Pipeline "${pipelineName}" saved successfully!`);
+      const pipelineData = {
+        name: pipelineName,
+        description: pipelineDescription,
+        config: {
+          nodes: cleanNodes,
+          edges: edges,
+          type: pipelineType,
+        },
+        tags: [],
+      };
+
+      console.log('Saving pipeline:', pipelineData);
+
+      const response = await apiClient.post('/api/v1/pipelines', pipelineData);
+
+      console.log('Pipeline saved successfully:', response);
+      setSaveDialogOpen(false);
+
+      // Show success message
+      alert(`Pipeline "${pipelineName}" saved successfully!`);
+
+      // Optionally: navigate to pipelines list or show a success snackbar
+    } catch (error: any) {
+      console.error('Failed to save pipeline:', error);
+      alert(`Failed to save pipeline: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+    }
   };
 
   // Execute pipeline
