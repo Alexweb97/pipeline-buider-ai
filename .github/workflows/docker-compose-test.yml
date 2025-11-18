@@ -1,0 +1,89 @@
+name: Docker Compose Test
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docker-compose.yml'
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
+      - '.github/workflows/docker-compose-test.yml'
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Create .env file
+      run: |
+        cat > .env << EOF
+        # Database
+        POSTGRES_USER=postgres
+        POSTGRES_PASSWORD=postgres
+        POSTGRES_DB=etl_builder
+        DATABASE_URL=postgresql://postgres:postgres@db:5432/etl_builder
+
+        # Backend
+        SECRET_KEY=test-secret-key-for-ci-cd
+        ALGORITHM=HS256
+        ACCESS_TOKEN_EXPIRE_MINUTES=30
+        BACKEND_PORT=8000
+
+        # Frontend
+        VITE_API_URL=http://localhost:8000
+        FRONTEND_PORT=3000
+        EOF
+
+    - name: Build Docker images
+      run: docker-compose build
+
+    - name: Start services
+      run: docker-compose up -d
+
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for backend..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+            echo "Backend is ready!"
+            break
+          fi
+          echo "Attempt $i: Backend not ready yet..."
+          sleep 2
+        done
+
+        echo "Waiting for frontend..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3000 > /dev/null 2>&1; then
+            echo "Frontend is ready!"
+            break
+          fi
+          echo "Attempt $i: Frontend not ready yet..."
+          sleep 2
+        done
+
+    - name: Check backend health
+      run: |
+        curl -f http://localhost:8000/health || exit 1
+
+    - name: Check frontend
+      run: |
+        curl -f http://localhost:3000 || exit 1
+
+    - name: Show logs on failure
+      if: failure()
+      run: |
+        echo "=== Backend logs ==="
+        docker-compose logs backend
+        echo "=== Frontend logs ==="
+        docker-compose logs frontend
+        echo "=== Database logs ==="
+        docker-compose logs db
+
+    - name: Stop services
+      if: always()
+      run: docker-compose down -v
