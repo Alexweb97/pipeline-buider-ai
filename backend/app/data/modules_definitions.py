@@ -247,6 +247,86 @@ MODULES_DATA = [
         },
         "tags": ["file", "parquet", "columnar"],
     },
+    {
+        "name": "rest-api-extractor",
+        "display_name": "REST API",
+        "description": "Fetch data from REST API endpoints with custom headers and authentication",
+        "type": "extractor",
+        "category": "api",
+        "python_class": "app.modules.extractors.rest_api.RESTAPIExtractor",
+        "icon": "Api",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "title": "API URL",
+                    "description": "REST API endpoint URL",
+                    "format": "uri"
+                },
+                "method": {
+                    "type": "string",
+                    "title": "HTTP Method",
+                    "description": "HTTP request method",
+                    "default": "GET",
+                    "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+                },
+                "headers": {
+                    "type": "object",
+                    "title": "Headers",
+                    "description": "HTTP headers as JSON object",
+                    "default": {}
+                },
+                "params": {
+                    "type": "object",
+                    "title": "Query Parameters",
+                    "description": "URL query parameters as JSON object",
+                    "default": {}
+                },
+                "body": {
+                    "type": "string",
+                    "title": "Request Body",
+                    "description": "JSON request body (for POST/PUT/PATCH)",
+                    "default": ""
+                },
+                "auth_type": {
+                    "type": "string",
+                    "title": "Authentication Type",
+                    "description": "Type of authentication to use",
+                    "default": "none",
+                    "enum": ["none", "basic", "bearer", "api_key"]
+                },
+                "auth_credentials": {
+                    "type": "object",
+                    "title": "Authentication Credentials",
+                    "description": "Authentication credentials (username/password, token, or API key)",
+                    "default": {}
+                },
+                "timeout": {
+                    "type": "integer",
+                    "title": "Timeout (seconds)",
+                    "description": "Request timeout in seconds",
+                    "default": 30,
+                    "minimum": 1,
+                    "maximum": 300
+                },
+                "pagination": {
+                    "type": "object",
+                    "title": "Pagination Config",
+                    "description": "Pagination configuration (if applicable)",
+                    "default": {}
+                },
+                "response_path": {
+                    "type": "string",
+                    "title": "JSON Response Path",
+                    "description": "JSONPath to extract data from response (e.g., $.data.items)",
+                    "default": "$"
+                }
+            },
+            "required": ["url"]
+        },
+        "tags": ["api", "rest", "http", "web"],
+    },
 
     # ============================================================================
     # TRANSFORMERS - Custom Code (2 modules)

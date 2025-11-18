@@ -95,7 +95,8 @@ export default function NodePreviewModal({
         }
       );
 
-      setPreviewData(response.data);
+      console.log('[DEBUG] Preview response:', response);
+      setPreviewData(response);
     } catch (err: any) {
       console.error('Preview error:', err);
       setError(

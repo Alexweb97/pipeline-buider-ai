@@ -487,6 +487,8 @@ async def preview_node_output(
 
         build_path(node_id)
 
+        print(f"[DEBUG] Execution order: {[n.get('id') for n in execution_order]}")
+
         if not execution_order:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -502,9 +504,13 @@ async def preview_node_output(
             module_id = node_data.get("moduleId")
             config = node_data.get("config", {})
 
+            print(f"[DEBUG] Executing node: {exec_node.get('id')}, type: {node_type}, module: {module_id}")
+            print(f"[DEBUG] Config: {config}")
+
             # Get module definition
             module_def = get_module_definition(module_id)
             if not module_def:
+                print(f"[ERROR] Module not found: {module_id}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Module {module_id} not found"
@@ -512,15 +518,195 @@ async def preview_node_output(
 
             # Execute based on node type
             if node_type == "extractor":
-                # For extractors, we need sample data
-                # In a real implementation, this would extract from the actual source
-                # For now, create sample data
-                data = pd.DataFrame({
-                    "id": range(1, 101),
-                    "name": [f"Sample {i}" for i in range(1, 101)],
-                    "value": [i * 10 for i in range(1, 101)],
-                    "category": ["A" if i % 2 == 0 else "B" for i in range(1, 101)],
-                })
+                # Handle REST API extractor specially
+                if module_id == "rest-api-extractor":
+                    import requests
+
+                    url = config.get("url", "").strip()
+                    if not url:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="URL is required for REST API extractor"
+                        )
+
+                    method = config.get("method", "GET").upper()
+                    headers = config.get("headers", {})
+                    params = config.get("params", {})
+                    timeout = config.get("timeout", 30)
+
+                    print(f"[DEBUG] Calling REST API: {method} {url}")
+                    print(f"[DEBUG] Headers: {headers}")
+                    print(f"[DEBUG] Params: {params}")
+
+                    try:
+                        response = requests.request(
+                            method=method,
+                            url=url,
+                            headers=headers,
+                            params=params,
+                            timeout=timeout
+                        )
+                        response.raise_for_status()
+
+                        # Detect content type
+                        content_type = response.headers.get('content-type', '').lower()
+                        print(f"[DEBUG] API Response Content-Type: {content_type}")
+
+                        # Parse based on content type
+                        if 'json' in content_type:
+                            # JSON response
+                            json_data = response.json()
+                            print(f"[DEBUG] API Response keys: {json_data.keys() if isinstance(json_data, dict) else 'list'}")
+
+                            # Extract data from JSON
+                            if isinstance(json_data, dict):
+                                if "data" in json_data:
+                                    raw_data = json_data["data"]
+                                elif "results" in json_data:
+                                    raw_data = json_data["results"]
+                                elif "items" in json_data:
+                                    raw_data = json_data["items"]
+                                elif "observations" in json_data:
+                                    raw_data = json_data["observations"]
+                                else:
+                                    # Use the whole response
+                                    raw_data = [json_data]
+                            elif isinstance(json_data, list):
+                                raw_data = json_data
+                            else:
+                                raise HTTPException(
+                                    status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Unexpected JSON format"
+                                )
+
+                            # Normalize nested JSON structures
+                            try:
+                                data = pd.json_normalize(raw_data)
+                                print(f"[DEBUG] Normalized {len(raw_data)} records with json_normalize")
+                            except Exception as e:
+                                # Fallback to regular DataFrame if normalization fails
+                                print(f"[DEBUG] json_normalize failed: {e}, using regular DataFrame")
+                                data = pd.DataFrame(raw_data)
+
+                        elif 'xml' in content_type:
+                            # XML response
+                            import xml.etree.ElementTree as ET
+                            from collections import Counter
+
+                            print("[DEBUG] Parsing XML response")
+                            root = ET.fromstring(response.content)
+                            records = []
+
+                            # Try to find repeating elements
+                            children = list(root)
+                            if children:
+                                # Find most common tag (likely data rows)
+                                tag_counts = Counter([child.tag.split('}')[-1] for child in children])
+                                most_common_tag = tag_counts.most_common(1)[0][0]
+                                data_elements = [c for c in children if c.tag.split('}')[-1] == most_common_tag]
+                                print(f"[DEBUG] Found {len(data_elements)} <{most_common_tag}> elements")
+
+                                # Extract records
+                                for element in data_elements:
+                                    record = {}
+                                    for child in element:
+                                        tag = child.tag.split('}')[-1]
+                                        record[tag] = child.text
+                                    if record:
+                                        records.append(record)
+
+                            if records:
+                                data = pd.DataFrame(records)
+                            else:
+                                raise HTTPException(
+                                    status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Could not extract data from XML"
+                                )
+
+                        elif 'csv' in content_type or 'text/plain' in content_type:
+                            # CSV response
+                            from io import StringIO
+                            print("[DEBUG] Parsing CSV response")
+
+                            try:
+                                # Try to detect delimiter
+                                text_content = response.text
+                                # Common delimiters: comma, semicolon, tab, pipe
+                                for delimiter in [',', ';', '\t', '|']:
+                                    if delimiter in text_content.split('\n')[0]:
+                                        data = pd.read_csv(StringIO(text_content), delimiter=delimiter)
+                                        print(f"[DEBUG] Parsed CSV with delimiter '{delimiter}'")
+                                        break
+                                else:
+                                    # Default to comma
+                                    data = pd.read_csv(StringIO(text_content))
+                                    print("[DEBUG] Parsed CSV with default comma delimiter")
+                            except Exception as e:
+                                print(f"[ERROR] CSV parsing failed: {e}")
+                                raise HTTPException(
+                                    status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"Could not parse CSV: {str(e)}"
+                                )
+
+                        else:
+                            # Unknown content type - try JSON, then CSV, then XML
+                            print(f"[DEBUG] Unknown content type, trying multiple parsers")
+                            try:
+                                # Try JSON first
+                                json_data = response.json()
+                                if isinstance(json_data, dict):
+                                    raw_data = json_data.get("data") or json_data.get("results") or [json_data]
+                                elif isinstance(json_data, list):
+                                    raw_data = json_data
+                                else:
+                                    raise ValueError("Not valid JSON structure")
+                                data = pd.json_normalize(raw_data)
+                                print("[DEBUG] Successfully parsed as JSON")
+                            except Exception as json_err:
+                                try:
+                                    # Try CSV
+                                    from io import StringIO
+                                    data = pd.read_csv(StringIO(response.text))
+                                    print("[DEBUG] Successfully parsed as CSV")
+                                except Exception as csv_err:
+                                    try:
+                                        # Try XML
+                                        import xml.etree.ElementTree as ET
+                                        root = ET.fromstring(response.content)
+                                        records = []
+                                        for child in root:
+                                            rec = {sc.tag.split('}')[-1]: sc.text for sc in child}
+                                            if rec:
+                                                records.append(rec)
+                                        if records:
+                                            data = pd.DataFrame(records)
+                                            print("[DEBUG] Successfully parsed as XML")
+                                        else:
+                                            raise ValueError("No XML records found")
+                                    except Exception as xml_err:
+                                        raise HTTPException(
+                                            status_code=status.HTTP_400_BAD_REQUEST,
+                                            detail=f"Could not parse response as JSON, CSV, or XML. Errors: JSON={str(json_err)}, CSV={str(csv_err)}, XML={str(xml_err)}"
+                                        )
+
+                        print(f"[DEBUG] DataFrame shape: {data.shape}")
+                        print(f"[DEBUG] Columns: {list(data.columns)}")
+
+                    except requests.exceptions.RequestException as e:
+                        print(f"[ERROR] REST API call failed: {str(e)}")
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"API request failed: {str(e)}"
+                        )
+                else:
+                    # For other extractors, create sample data
+                    # In a real implementation, this would extract from the actual source
+                    data = pd.DataFrame({
+                        "id": range(1, 101),
+                        "name": [f"Sample {i}" for i in range(1, 101)],
+                        "value": [i * 10 for i in range(1, 101)],
+                        "category": ["A" if i % 2 == 0 else "B" for i in range(1, 101)],
+                    })
 
             elif node_type == "transformer":
                 if data is None:
@@ -558,6 +744,10 @@ async def preview_node_output(
                 "error_type": "NoDataError"
             }
 
+        # Replace Infinity and -Infinity with NaN for consistent handling
+        import numpy as np
+        data = data.replace([np.inf, -np.inf], np.nan)
+
         # Calculate statistics
         input_shape = list(data.shape)
         output_shape = list(data.shape)
@@ -566,14 +756,38 @@ async def preview_node_output(
         schema = {}
         for col in data.columns:
             col_data = data[col]
+
+            # Try to calculate unique count, but handle unhashable types (dict, list)
+            try:
+                unique_count = int(col_data.nunique())
+            except (TypeError, ValueError):
+                # If column contains unhashable types, use -1 as indicator
+                unique_count = -1
+
             schema[col] = {
                 "dtype": str(col_data.dtype),
                 "null_count": int(col_data.isna().sum()),
-                "unique_count": int(col_data.nunique()),
+                "unique_count": unique_count,
             }
 
         # Get preview data (first 10 rows)
-        preview_rows = data.head(10).to_dict(orient="records")
+        # Convert to dict with proper NaN/Inf handling for JSON serialization
+        preview_df = data.head(10)
+
+        # Custom function to clean values for JSON serialization
+        def clean_value(val):
+            if pd.isna(val):
+                return None
+            if isinstance(val, (np.floating, float)):
+                if np.isinf(val) or np.isnan(val):
+                    return None
+                return float(val)
+            return val
+
+        preview_rows = []
+        for _, row in preview_df.iterrows():
+            clean_row = {col: clean_value(val) for col, val in row.items()}
+            preview_rows.append(clean_row)
 
         return {
             "success": True,
