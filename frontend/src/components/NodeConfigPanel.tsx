@@ -408,6 +408,14 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({
           onSave={(code) => {
             handleConfigChange(codeEditorField.field.name, code);
           }}
+          onPreview={async (code) => {
+            // Update config with current code before preview
+            handleConfigChange(codeEditorField.field.name, code);
+            // Trigger node preview if available
+            if (node.data.onPreview) {
+              await node.data.onPreview();
+            }
+          }}
         />
       )}
     </Paper>
