@@ -28,15 +28,8 @@ import {
   Help as HelpIcon,
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
-import Editor, { loader } from '@monaco-editor/react';
+import Editor from '@monaco-editor/react';
 import DataPreview from './DataPreview';
-
-// Configure Monaco Editor loader
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-  }
-});
 
 interface CodeEditorModalProps {
   open: boolean;
