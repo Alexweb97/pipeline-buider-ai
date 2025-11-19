@@ -225,7 +225,9 @@ services:
 
   # Apache Airflow - Worker
   airflow-worker:
-    image: apache/airflow:2.8.1-python3.11
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     container_name: etl_airflow_worker
     command: celery worker
     environment:
@@ -235,7 +237,9 @@ services:
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@airflow-postgres/airflow
       - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
       - AIRFLOW_CONN_ETL_POSTGRES=postgresql://etl_user:etl_password@postgres:5432/etl_builder
+      - PYTHONPATH=/app:/opt/airflow
     volumes:
+      - ../../backend:/app
       - ../../backend/dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
