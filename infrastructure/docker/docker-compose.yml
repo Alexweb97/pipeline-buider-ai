@@ -123,7 +123,7 @@ services:
       context: ../../backend
       dockerfile: Dockerfile
     container_name: etl_celery_worker
-    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4 -Q celery,pipelines,data_processing,notifications
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=postgresql://etl_user:etl_password@postgres:5432/etl_builder
@@ -165,7 +165,7 @@ services:
 
   # Apache Airflow - Webserver
   airflow-webserver:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:2.10.4-python3.11
     container_name: etl_airflow_webserver
     command: webserver
     environment:
@@ -201,7 +201,7 @@ services:
 
   # Apache Airflow - Scheduler
   airflow-scheduler:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:2.10.4-python3.11
     container_name: etl_airflow_scheduler
     command: scheduler
     environment:
@@ -225,7 +225,9 @@ services:
 
   # Apache Airflow - Worker
   airflow-worker:
-    image: apache/airflow:2.8.1-python3.11
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     container_name: etl_airflow_worker
     command: celery worker
     environment:
@@ -235,7 +237,9 @@ services:
       - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:airflow@airflow-postgres/airflow
       - AIRFLOW__CORE__FERNET_KEY=ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=
       - AIRFLOW_CONN_ETL_POSTGRES=postgresql://etl_user:etl_password@postgres:5432/etl_builder
+      - PYTHONPATH=/app:/opt/airflow
     volumes:
+      - ../../backend:/app
       - ../../backend/dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
@@ -247,7 +251,7 @@ services:
 
   # Airflow Init - Initialize DB and create admin user
   airflow-init:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:2.10.4-python3.11
     container_name: etl_airflow_init
     entrypoint: /bin/bash
     command:

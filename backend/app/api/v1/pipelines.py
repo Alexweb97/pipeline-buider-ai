@@ -255,25 +255,16 @@ def execute_pipeline(
             detail="Pipeline not found",
         )
 
-    # TODO: Implement actual pipeline execution
-    # For now, create execution record
-    from app.db.models.execution import PipelineExecution
-    from uuid import uuid4
+    # Trigger pipeline execution via Celery task
+    from app.workers.tasks.pipeline import execute_pipeline as execute_pipeline_task
 
-    execution = PipelineExecution(
-        id=uuid4(),
-        pipeline_id=pipeline_id,
-        triggered_by=current_user.id,
-        status="pending",
-        trigger_type=execute_data.trigger_type,
+    # Trigger async task
+    task = execute_pipeline_task.delay(
+        pipeline_id=str(pipeline_id),
         params=execute_data.params,
-        logs=[],
-        metrics={},
+        trigger_type=execute_data.trigger_type,
+        user_id=str(current_user.id),
     )
-
-    db.add(execution)
-    db.commit()
-    db.refresh(execution)
 
     # Log audit event
     log_audit_event(
@@ -286,17 +277,17 @@ def execute_pipeline(
         ip_address=get_client_ip(request),
         user_agent=get_user_agent(request),
         details={
-            "execution_id": str(execution.id),
             "trigger_type": execute_data.trigger_type,
             "params": execute_data.params,
+            "celery_task_id": task.id,
         },
     )
 
     return {
-        "execution_id": str(execution.id),
         "pipeline_id": str(pipeline_id),
-        "status": execution.status,
-        "message": "Pipeline execution started",
+        "celery_task_id": task.id,
+        "status": "pending",
+        "message": "Pipeline execution task submitted to Celery",
     }
 
 

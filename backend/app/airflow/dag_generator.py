@@ -1,0 +1,308 @@
+"""
+Dynamic Airflow DAG Generator
+Generates Airflow DAGs from pipeline configurations
+"""
+import logging
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+class DAGGenerator:
+    """
+    Generate Airflow DAG files from pipeline configurations
+
+    The generated DAGs are written to the Airflow DAGs folder where
+    the Airflow scheduler will automatically detect and load them.
+    """
+
+    def __init__(self, dags_folder: str = None):
+        """
+        Initialize DAG generator
+
+        Args:
+            dags_folder: Path to Airflow DAGs folder (defaults to /backend/dags)
+        """
+        self.dags_folder = Path(dags_folder or "/app/dags")
+        self.dags_folder.mkdir(parents=True, exist_ok=True)
+
+    def generate_dag(
+        self,
+        pipeline_id: UUID,
+        pipeline_name: str,
+        pipeline_config: dict[str, Any],
+        schedule: str | None = None,
+        default_params: dict[str, Any] = None,
+    ) -> str:
+        """
+        Generate an Airflow DAG from a pipeline configuration
+
+        Args:
+            pipeline_id: Pipeline UUID
+            pipeline_name: Pipeline display name
+            pipeline_config: Pipeline configuration with nodes and edges
+            schedule: Cron expression for scheduling (optional)
+            default_params: Default parameters for the pipeline
+
+        Returns:
+            Path to the generated DAG file
+        """
+        logger.info(f"Generating DAG for pipeline: {pipeline_name} ({pipeline_id})")
+
+        # Create DAG ID from pipeline ID
+        dag_id = f"pipeline_{str(pipeline_id).replace('-', '_')}"
+
+        # Extract nodes and edges
+        nodes = pipeline_config.get("nodes", [])
+        edges = pipeline_config.get("edges", [])
+
+        if not nodes:
+            raise ValueError("Pipeline configuration must contain at least one node")
+
+        # Generate DAG Python code
+        dag_code = self._generate_dag_code(
+            dag_id=dag_id,
+            pipeline_id=str(pipeline_id),
+            pipeline_name=pipeline_name,
+            nodes=nodes,
+            edges=edges,
+            schedule=schedule,
+            default_params=default_params or {},
+        )
+
+        # Write DAG to file
+        dag_file_path = self.dags_folder / f"{dag_id}.py"
+        with open(dag_file_path, "w") as f:
+            f.write(dag_code)
+
+        logger.info(f"DAG file generated: {dag_file_path}")
+
+        return str(dag_file_path)
+
+    def _generate_dag_code(
+        self,
+        dag_id: str,
+        pipeline_id: str,
+        pipeline_name: str,
+        nodes: list[dict],
+        edges: list[dict],
+        schedule: str | None,
+        default_params: dict[str, Any],
+    ) -> str:
+        """
+        Generate Python code for the Airflow DAG
+
+        Args:
+            dag_id: DAG identifier
+            pipeline_id: Pipeline UUID
+            pipeline_name: Pipeline name
+            nodes: List of pipeline nodes
+            edges: List of pipeline edges
+            schedule: Cron schedule
+            default_params: Default parameters
+
+        Returns:
+            Python code as string
+        """
+        # Build tasks code
+        tasks_code = []
+        task_variables = {}
+
+        for node in nodes:
+            node_id = node["id"]
+            node_data = node.get("data", {})
+            node_type = node.get("type", "extractor")
+
+            # Get module info
+            module_id = node_data.get("moduleId")
+            module_config = node_data.get("config", {})
+
+            # Find upstream tasks for this node
+            upstream_tasks = [
+                edge["source"] for edge in edges if edge["target"] == node_id
+            ]
+
+            # Generate task code
+            task_var = f"task_{node_id.replace('-', '_')}"
+            task_variables[node_id] = task_var
+
+            # Convert module_id to Python module name (replace dashes with underscores)
+            module_name = module_id.replace('-', '_')
+
+            task_code = f"""{task_var} = ETLOperator(
+    task_id='{node_id}',
+    etl_node_id='{node_id}',
+    node_type='{node_type}',
+    module_class='app.modules.{node_type}s.{module_name}.{self._get_class_name(module_id)}',
+    module_config={module_config!r},
+    database_url=DATABASE_URL,
+    xcom_pull_keys={upstream_tasks!r},
+    dag=dag,
+)
+"""
+            tasks_code.append(task_code)
+
+        # Build dependencies code
+        dependencies_code = []
+        for edge in edges:
+            source_var = task_variables.get(edge["source"])
+            target_var = task_variables.get(edge["target"])
+
+            if source_var and target_var:
+                dependencies_code.append(f"{source_var} >> {target_var}")
+
+        # Combine all code
+        dag_code = f'''"""
+Airflow DAG for Pipeline: {pipeline_name}
+Auto-generated by LogiData AI
+Pipeline ID: {pipeline_id}
+"""
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+
+import sys
+import os
+
+# Add backend to Python path for module imports
+sys.path.insert(0, '/app')
+
+from operators.etl_operator import ETLOperator
+
+# Configuration
+DATABASE_URL = "{settings.DATABASE_URL}"
+PIPELINE_ID = "{pipeline_id}"
+
+# Default arguments
+default_args = {{
+    'owner': 'logidata_ai',
+    'depends_on_past': False,
+    'start_date': datetime(2024, 1, 1),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}}
+
+# Create DAG
+dag = DAG(
+    dag_id='{dag_id}',
+    default_args=default_args,
+    description='{pipeline_name}',
+    schedule_interval={'None' if not schedule else f"'{schedule}'"},
+    catchup=False,
+    tags=['logidata_ai', 'pipeline', '{pipeline_id}'],
+    params={default_params!r},
+)
+
+# Define tasks
+{"".join(tasks_code)}
+# Define dependencies
+{chr(10).join(dependencies_code) if dependencies_code else "# No dependencies"}
+'''
+
+        return dag_code
+
+    def _get_class_name(self, module_id: str) -> str:
+        """
+        Convert module ID to class name
+        e.g., 'csv-extractor' -> 'CSVExtractor'
+
+        Args:
+            module_id: Module identifier
+
+        Returns:
+            Class name
+        """
+        # Manual mapping for special cases where naming isn't predictable
+        class_name_mapping = {
+            "rest-api-extractor": "RestAPIExtractor",
+            "python-transformer": "PythonTransformer",
+            "clean-transformer": "CleanTransformer",
+            "sql-transformer": "SQLTransformer",
+        }
+
+        # Check if we have a manual mapping
+        if module_id in class_name_mapping:
+            return class_name_mapping[module_id]
+
+        # Detect module type
+        module_type = None
+        for suffix in ["-extractor", "-transformer", "-loader"]:
+            if module_id.endswith(suffix):
+                module_type = suffix[1:]  # Remove leading dash
+                module_id = module_id[: -len(suffix)]
+                break
+
+        # Convert to PascalCase
+        parts = module_id.split("-")
+        class_name = "".join(part.capitalize() for part in parts)
+
+        # Add type suffix
+        if module_type == "extractor":
+            return f"{class_name}Extractor"
+        elif module_type == "transformer":
+            return f"{class_name}Transformer"
+        elif module_type == "loader":
+            return f"{class_name}Loader"
+        else:
+            return class_name
+
+    def delete_dag(self, pipeline_id: UUID) -> bool:
+        """
+        Delete a DAG file
+
+        Args:
+            pipeline_id: Pipeline UUID
+
+        Returns:
+            True if deleted, False if not found
+        """
+        dag_id = f"pipeline_{str(pipeline_id).replace('-', '_')}"
+        dag_file_path = self.dags_folder / f"{dag_id}.py"
+
+        if dag_file_path.exists():
+            dag_file_path.unlink()
+            logger.info(f"DAG file deleted: {dag_file_path}")
+            return True
+        else:
+            logger.warning(f"DAG file not found: {dag_file_path}")
+            return False
+
+    def update_dag(
+        self,
+        pipeline_id: UUID,
+        pipeline_name: str,
+        pipeline_config: dict[str, Any],
+        schedule: str | None = None,
+        default_params: dict[str, Any] = None,
+    ) -> str:
+        """
+        Update an existing DAG (delete and regenerate)
+
+        Args:
+            pipeline_id: Pipeline UUID
+            pipeline_name: Pipeline name
+            pipeline_config: Pipeline configuration
+            schedule: Cron schedule
+            default_params: Default parameters
+
+        Returns:
+            Path to the generated DAG file
+        """
+        # Delete existing DAG
+        self.delete_dag(pipeline_id)
+
+        # Generate new DAG
+        return self.generate_dag(
+            pipeline_id=pipeline_id,
+            pipeline_name=pipeline_name,
+            pipeline_config=pipeline_config,
+            schedule=schedule,
+            default_params=default_params,
+        )
