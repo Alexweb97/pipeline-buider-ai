@@ -425,7 +425,7 @@ def seed_modules(
         {
             "name": "csv-loader",
             "display_name": "CSV File",
-            "description": "Save data to CSV file",
+            "description": "Save data to CSV file with configurable output location",
             "type": "loader",
             "category": "file",
             "python_class": "app.modules.loaders.csv.CSVLoader",
@@ -433,13 +433,28 @@ def seed_modules(
             "config_schema": {
                 "type": "object",
                 "properties": {
-                    "file_path": {"type": "string", "title": "File Path"},
-                    "delimiter": {"type": "string", "title": "Delimiter", "default": ","},
-                    "include_header": {"type": "boolean", "title": "Include Header", "default": True}
+                    "file_path": {
+                        "type": "string",
+                        "title": "Output Directory or File Path",
+                        "description": "Destination path. Use ~/Downloads for Downloads folder",
+                        "default": "~/Downloads"
+                    },
+                    "filename": {
+                        "type": "string",
+                        "title": "Filename",
+                        "description": "Output filename (if file_path is a directory)",
+                        "default": "output.csv"
+                    },
+                    "delimiter": {"type": "string", "title": "Delimiter", "default": ",", "enum": [",", ";", "\t", "|"]},
+                    "encoding": {"type": "string", "title": "Encoding", "default": "utf-8", "enum": ["utf-8", "latin1", "iso-8859-1"]},
+                    "include_header": {"type": "boolean", "title": "Include Header", "default": True},
+                    "quote_all": {"type": "boolean", "title": "Quote All Fields", "default": False},
+                    "append_mode": {"type": "boolean", "title": "Append Mode", "default": False},
+                    "create_dirs": {"type": "boolean", "title": "Create Directories", "default": True}
                 },
                 "required": ["file_path"]
             },
-            "tags": ["file", "csv"],
+            "tags": ["file", "csv", "export"],
         },
     ]
 
