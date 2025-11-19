@@ -456,6 +456,77 @@ LIMIT 1000"""
         },
         "tags": ["data-quality", "cleaning", "normalization"],
     },
+
+    # ============================================================================
+    # LOADERS - Data Destinations
+    # ============================================================================
+
+    {
+        "name": "csv-loader",
+        "display_name": "CSV File",
+        "description": "Save data to CSV file with configurable output location",
+        "type": "loader",
+        "category": "file",
+        "python_class": "app.modules.loaders.csv.CSVLoader",
+        "icon": "Storage",
+        "config_schema": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "title": "Output Directory or File Path",
+                    "description": "Destination path. Use ~/Downloads for Downloads folder",
+                    "default": "~/Downloads"
+                },
+                "filename": {
+                    "type": "string",
+                    "title": "Filename",
+                    "description": "Output filename (if file_path is a directory)",
+                    "default": "output.csv"
+                },
+                "delimiter": {
+                    "type": "string",
+                    "title": "Delimiter",
+                    "description": "Column separator",
+                    "default": ",",
+                    "enum": [",", ";", "\t", "|"]
+                },
+                "encoding": {
+                    "type": "string",
+                    "title": "Encoding",
+                    "description": "File character encoding",
+                    "default": "utf-8",
+                    "enum": ["utf-8", "latin1", "iso-8859-1"]
+                },
+                "include_header": {
+                    "type": "boolean",
+                    "title": "Include Header",
+                    "description": "Write column names as first row",
+                    "default": True
+                },
+                "quote_all": {
+                    "type": "boolean",
+                    "title": "Quote All Fields",
+                    "description": "Wrap all values in quotes",
+                    "default": False
+                },
+                "append_mode": {
+                    "type": "boolean",
+                    "title": "Append Mode",
+                    "description": "Append to existing file instead of overwriting",
+                    "default": False
+                },
+                "create_dirs": {
+                    "type": "boolean",
+                    "title": "Create Directories",
+                    "description": "Create output directory if it doesn't exist",
+                    "default": True
+                }
+            },
+            "required": ["file_path"]
+        },
+        "tags": ["file", "csv", "export"],
+    },
 ]
 
 
