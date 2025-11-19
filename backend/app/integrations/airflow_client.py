@@ -8,10 +8,6 @@ from typing import Any, Optional
 from uuid import UUID
 
 import httpx
-from airflow_client.client.api import dag_api, dag_run_api
-from airflow_client.client.api_client import ApiClient
-from airflow_client.client.configuration import Configuration
-from airflow_client.client.model.dag_run import DAGRun
 
 from app.core.config import settings
 
@@ -41,17 +37,7 @@ class AirflowClient:
         self.base_url = base_url or settings.AIRFLOW_API_URL
         self.username = username
         self.password = password
-
-        # Configure API client
-        self.configuration = Configuration(
-            host=self.base_url,
-            username=self.username,
-            password=self.password,
-        )
-
-        self.api_client = ApiClient(self.configuration)
-        self.dag_api = dag_api.DAGApi(self.api_client)
-        self.dag_run_api = dag_run_api.DAGRunApi(self.api_client)
+        self.auth = (self.username, self.password)
 
         logger.info(f"Airflow client initialized with base URL: {self.base_url}")
 
@@ -78,21 +64,32 @@ class AirflowClient:
         try:
             logger.info(f"Triggering DAG: {dag_id}")
 
-            dag_run = DAGRun(
-                conf=conf or {},
-                execution_date=execution_date or datetime.utcnow(),
-            )
+            url = f"{self.base_url}/dags/{dag_id}/dagRuns"
+            payload = {
+                "conf": conf or {},
+            }
 
-            result = self.dag_run_api.post_dag_run(dag_id, dag_run)
+            if execution_date:
+                payload["execution_date"] = execution_date.isoformat()
 
-            logger.info(f"DAG triggered successfully: {dag_id}, run_id: {result.dag_run_id}")
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    auth=self.auth,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                result = response.json()
+
+            logger.info(f"DAG triggered successfully: {dag_id}, run_id: {result.get('dag_run_id')}")
 
             return {
-                "dag_id": result.dag_id,
-                "dag_run_id": result.dag_run_id,
-                "execution_date": result.execution_date.isoformat() if result.execution_date else None,
-                "state": result.state,
-                "external_trigger": result.external_trigger,
+                "dag_id": result.get("dag_id"),
+                "dag_run_id": result.get("dag_run_id"),
+                "execution_date": result.get("execution_date"),
+                "state": result.get("state"),
+                "external_trigger": result.get("external_trigger"),
             }
 
         except Exception as e:
@@ -111,16 +108,25 @@ class AirflowClient:
             DAG run status information
         """
         try:
-            result = self.dag_run_api.get_dag_run(dag_id, dag_run_id)
+            url = f"{self.base_url}/dags/{dag_id}/dagRuns/{dag_run_id}"
+
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    url,
+                    auth=self.auth,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                result = response.json()
 
             return {
-                "dag_id": result.dag_id,
-                "dag_run_id": result.dag_run_id,
-                "state": result.state,
-                "execution_date": result.execution_date.isoformat() if result.execution_date else None,
-                "start_date": result.start_date.isoformat() if result.start_date else None,
-                "end_date": result.end_date.isoformat() if result.end_date else None,
-                "conf": result.conf,
+                "dag_id": result.get("dag_id"),
+                "dag_run_id": result.get("dag_run_id"),
+                "state": result.get("state"),
+                "execution_date": result.get("execution_date"),
+                "start_date": result.get("start_date"),
+                "end_date": result.get("end_date"),
+                "conf": result.get("conf"),
             }
 
         except Exception as e:
@@ -141,16 +147,25 @@ class AirflowClient:
         try:
             logger.info(f"Cancelling DAG run: {dag_id}/{dag_run_id}")
 
-            # Use PATCH to update state to 'failed' (Airflow doesn't have explicit cancel)
-            dag_run = DAGRun(state="failed")
-            result = self.dag_run_api.patch_dag_run(dag_id, dag_run_id, dag_run)
+            url = f"{self.base_url}/dags/{dag_id}/dagRuns/{dag_run_id}"
+            payload = {"state": "failed"}
+
+            async with httpx.AsyncClient() as client:
+                response = await client.patch(
+                    url,
+                    json=payload,
+                    auth=self.auth,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                result = response.json()
 
             logger.info(f"DAG run cancelled: {dag_id}/{dag_run_id}")
 
             return {
-                "dag_id": result.dag_id,
-                "dag_run_id": result.dag_run_id,
-                "state": result.state,
+                "dag_id": result.get("dag_id"),
+                "dag_run_id": result.get("dag_run_id"),
+                "state": result.get("state"),
             }
 
         except Exception as e:
@@ -168,7 +183,10 @@ class AirflowClient:
             True if DAG exists, False otherwise
         """
         try:
-            self.dag_api.get_dag(dag_id)
+            url = f"{self.base_url}/dags/{dag_id}"
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, auth=self.auth, timeout=30.0)
+                response.raise_for_status()
             return True
         except Exception:
             return False
@@ -182,7 +200,18 @@ class AirflowClient:
         """
         try:
             logger.info(f"Pausing DAG: {dag_id}")
-            self.dag_api.patch_dag(dag_id, {"is_paused": True})
+            url = f"{self.base_url}/dags/{dag_id}"
+            payload = {"is_paused": True}
+
+            async with httpx.AsyncClient() as client:
+                response = await client.patch(
+                    url,
+                    json=payload,
+                    auth=self.auth,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+
             logger.info(f"DAG paused: {dag_id}")
         except Exception as e:
             logger.error(f"Failed to pause DAG {dag_id}: {str(e)}")
@@ -197,7 +226,18 @@ class AirflowClient:
         """
         try:
             logger.info(f"Unpausing DAG: {dag_id}")
-            self.dag_api.patch_dag(dag_id, {"is_paused": False})
+            url = f"{self.base_url}/dags/{dag_id}"
+            payload = {"is_paused": False}
+
+            async with httpx.AsyncClient() as client:
+                response = await client.patch(
+                    url,
+                    json=payload,
+                    auth=self.auth,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+
             logger.info(f"DAG unpaused: {dag_id}")
         except Exception as e:
             logger.error(f"Failed to unpause DAG {dag_id}: {str(e)}")
@@ -226,11 +266,6 @@ class AirflowClient:
         except Exception as e:
             logger.error(f"Failed to get task logs: {str(e)}")
             raise
-
-    def close(self):
-        """Close the API client"""
-        if self.api_client:
-            self.api_client.close()
 
 
 # Global client instance
