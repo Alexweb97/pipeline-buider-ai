@@ -131,17 +131,16 @@ class DAGGenerator:
             task_var = f"task_{node_id.replace('-', '_')}"
             task_variables[node_id] = task_var
 
-            task_code = f"""
-    {task_var} = ETLOperator(
-        task_id='{node_id}',
-        node_id='{node_id}',
-        node_type='{node_type}',
-        module_class='app.modules.{node_type}s.{module_id}.{self._get_class_name(module_id)}',
-        module_config={module_config!r},
-        database_url=DATABASE_URL,
-        xcom_pull_keys={upstream_tasks!r},
-        dag=dag,
-    )
+            task_code = f"""{task_var} = ETLOperator(
+    task_id='{node_id}',
+    etl_node_id='{node_id}',
+    node_type='{node_type}',
+    module_class='app.modules.{node_type}s.{module_id}.{self._get_class_name(module_id)}',
+    module_config={module_config!r},
+    database_url=DATABASE_URL,
+    xcom_pull_keys={upstream_tasks!r},
+    dag=dag,
+)
 """
             tasks_code.append(task_code)
 
@@ -152,7 +151,7 @@ class DAGGenerator:
             target_var = task_variables.get(edge["target"])
 
             if source_var and target_var:
-                dependencies_code.append(f"    {source_var} >> {target_var}")
+                dependencies_code.append(f"{source_var} >> {target_var}")
 
         # Combine all code
         dag_code = f'''"""
@@ -200,9 +199,8 @@ dag = DAG(
 
 # Define tasks
 {"".join(tasks_code)}
-
 # Define dependencies
-{"".join(dependencies_code) if dependencies_code else "    # No dependencies"}
+{chr(10).join(dependencies_code) if dependencies_code else "# No dependencies"}
 '''
 
         return dag_code

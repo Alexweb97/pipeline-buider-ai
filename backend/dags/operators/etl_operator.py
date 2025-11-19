@@ -30,14 +30,14 @@ class ETLOperator(BaseOperator):
         xcom_pull_keys: List of XCom keys to pull data from (for transformers/loaders)
     """
 
-    template_fields = ("module_config", "node_id")
+    template_fields = ("module_config", "etl_node_id")
     ui_color = "#4CAF50"  # Green for extractors
     ui_fgcolor = "#FFFFFF"
 
     @apply_defaults
     def __init__(
         self,
-        node_id: str,
+        etl_node_id: str,
         node_type: str,
         module_class: str,
         module_config: dict[str, Any],
@@ -47,7 +47,7 @@ class ETLOperator(BaseOperator):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.node_id = node_id
+        self.etl_node_id = etl_node_id
         self.node_type = node_type
         self.module_class = module_class
         self.module_config = module_config
@@ -72,7 +72,7 @@ class ETLOperator(BaseOperator):
         Returns:
             Result from the module execution (usually a DataFrame or dict)
         """
-        logger.info(f"Executing {self.node_type} node: {self.node_id}")
+        logger.info(f"Executing {self.node_type} node: {self.etl_node_id}")
         logger.info(f"Module class: {self.module_class}")
 
         try:
@@ -114,7 +114,7 @@ class ETLOperator(BaseOperator):
                 return result
 
         except Exception as e:
-            logger.error(f"Error executing {self.node_type} node {self.node_id}: {str(e)}")
+            logger.error(f"Error executing {self.node_type} node {self.etl_node_id}: {str(e)}")
             raise
 
         finally:
