@@ -169,7 +169,7 @@ import os
 # Add backend to Python path for module imports
 sys.path.insert(0, '/app')
 
-from dags.operators.etl_operator import ETLOperator
+from operators.etl_operator import ETLOperator
 
 # Configuration
 DATABASE_URL = "{settings.DATABASE_URL}"
