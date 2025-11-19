@@ -729,13 +729,19 @@ async def preview_node_output(
             elif node_type == "loader":
                 # For preview, we just pass through the data
                 # In real execution, this would load to destination
+                # Verify that data exists before showing preview
+                if data is None or (hasattr(data, 'empty') and data.empty):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Loader requires input data from previous modules. Please connect an extractor or transformer before the loader."
+                    )
                 pass
 
         # Generate preview response
-        if data is None or data.empty:
+        if data is None or (hasattr(data, 'empty') and data.empty):
             return {
                 "success": False,
-                "error": "No data available",
+                "error": "No data available. Make sure the pipeline has an extractor module and all modules are properly connected.",
                 "error_type": "NoDataError"
             }
 
