@@ -1633,7 +1633,7 @@ MODULES = [
     {
         "name": "csv-loader",
         "display_name": "CSV File",
-        "description": "Save data to CSV file",
+        "description": "Save data to CSV file with configurable output location",
         "type": "loader",
         "category": "file",
         "python_class": "app.modules.loaders.csv.CSVLoader",
@@ -1643,8 +1643,15 @@ MODULES = [
             "properties": {
                 "file_path": {
                     "type": "string",
-                    "title": "Output File Path",
-                    "description": "Path for output CSV file"
+                    "title": "Output Directory or File Path",
+                    "description": "Destination path. Use ~/Downloads for Downloads folder, or specify full path. Examples: ~/Downloads, /tmp, C:\\Users\\YourName\\Downloads",
+                    "default": "~/Downloads"
+                },
+                "filename": {
+                    "type": "string",
+                    "title": "Filename",
+                    "description": "Output filename (used if file_path is a directory)",
+                    "default": "output.csv"
                 },
                 "delimiter": {
                     "type": "string",
@@ -1671,6 +1678,18 @@ MODULES = [
                     "title": "Quote All Fields",
                     "description": "Wrap all values in quotes",
                     "default": False
+                },
+                "append_mode": {
+                    "type": "boolean",
+                    "title": "Append Mode",
+                    "description": "Append to existing file instead of overwriting",
+                    "default": False
+                },
+                "create_dirs": {
+                    "type": "boolean",
+                    "title": "Create Directories",
+                    "description": "Create output directory if it doesn't exist",
+                    "default": True
                 }
             },
             "required": ["file_path"]
