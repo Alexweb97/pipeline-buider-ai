@@ -1,9 +1,18 @@
 """
 Pipeline Execution Tasks
 """
+from datetime import datetime
+from uuid import UUID
+
 from celery import Task
 from celery.utils.log import get_task_logger
+from sqlalchemy.orm import Session
 
+from app.airflow.dag_generator import DAGGenerator
+from app.db.models.execution import PipelineExecution
+from app.db.models.pipeline import Pipeline
+from app.db.session import SessionLocal
+from app.integrations.airflow_client import get_airflow_client
 from app.workers.celery_app import celery_app
 
 logger = get_task_logger(__name__)
@@ -24,33 +33,108 @@ class PipelineTask(Task):
 
 
 @celery_app.task(base=PipelineTask, bind=True, name="app.workers.tasks.pipeline.execute_pipeline")
-def execute_pipeline(self, pipeline_id: str, params: dict = None):
+def execute_pipeline(self, pipeline_id: str, params: dict = None, trigger_type: str = "manual", user_id: str = None):
     """
-    Execute a pipeline asynchronously
+    Execute a pipeline asynchronously via Airflow
 
     Args:
         pipeline_id: Pipeline UUID
         params: Pipeline execution parameters
+        trigger_type: Trigger type (manual, scheduled, webhook)
+        user_id: User who triggered the execution (optional)
+
+    Returns:
+        Execution information including dag_run_id
     """
     logger.info(f"Starting pipeline execution: {pipeline_id}")
+    db: Session = SessionLocal()
 
     try:
-        # TODO: Implement actual pipeline execution logic
-        # This would involve:
         # 1. Load pipeline configuration from database
-        # 2. Trigger Airflow DAG
-        # 3. Monitor execution
-        # 4. Update execution status
+        pipeline = db.query(Pipeline).filter(Pipeline.id == UUID(pipeline_id)).first()
+        if not pipeline:
+            raise ValueError(f"Pipeline not found: {pipeline_id}")
 
-        logger.info(f"Pipeline {pipeline_id} executed successfully")
+        logger.info(f"Loaded pipeline: {pipeline.name}")
+
+        # 2. Create execution record
+        execution = PipelineExecution(
+            pipeline_id=UUID(pipeline_id),
+            triggered_by=UUID(user_id) if user_id else None,
+            status="pending",
+            trigger_type=trigger_type,
+            params=params or {},
+        )
+        db.add(execution)
+        db.commit()
+        db.refresh(execution)
+
+        logger.info(f"Created execution record: {execution.id}")
+
+        # 3. Generate or update Airflow DAG
+        dag_generator = DAGGenerator()
+        dag_file = dag_generator.update_dag(
+            pipeline_id=pipeline.id,
+            pipeline_name=pipeline.name,
+            pipeline_config=pipeline.config,
+            schedule=pipeline.schedule,
+            default_params=pipeline.default_params,
+        )
+
+        logger.info(f"Generated DAG file: {dag_file}")
+
+        # Wait a bit for Airflow to detect the new DAG
+        import time
+        time.sleep(2)
+
+        # 4. Trigger Airflow DAG
+        airflow_client = get_airflow_client()
+        dag_id = f"pipeline_{str(pipeline.id).replace('-', '_')}"
+
+        # Prepare DAG configuration
+        dag_conf = {
+            "pipeline_id": str(pipeline.id),
+            "execution_id": str(execution.id),
+            "params": params or {},
+            "trigger_type": trigger_type,
+        }
+
+        # Trigger the DAG
+        import asyncio
+        dag_run = asyncio.run(airflow_client.trigger_dag(
+            dag_id=dag_id,
+            conf=dag_conf,
+        ))
+
+        logger.info(f"Triggered Airflow DAG: {dag_run['dag_run_id']}")
+
+        # 5. Update execution with Airflow DAG run ID
+        execution.airflow_dag_run_id = dag_run["dag_run_id"]
+        execution.status = "running"
+        execution.started_at = datetime.utcnow().isoformat()
+        db.commit()
+
+        logger.info(f"Pipeline {pipeline_id} execution started successfully")
+
         return {
             "status": "success",
             "pipeline_id": pipeline_id,
-            "message": "Pipeline executed successfully",
+            "execution_id": str(execution.id),
+            "dag_run_id": dag_run["dag_run_id"],
+            "message": "Pipeline execution started in Airflow",
         }
+
     except Exception as e:
         logger.error(f"Pipeline execution failed: {str(e)}")
+        # Update execution status to failed
+        if 'execution' in locals() and execution:
+            execution.status = "failed"
+            execution.error_message = str(e)
+            db.commit()
         raise
+
+    finally:
+        db.close()
 
 
 @celery_app.task(name="app.workers.tasks.pipeline.check_scheduled_pipelines")
@@ -79,6 +163,96 @@ def check_scheduled_pipelines():
         raise
 
 
+@celery_app.task(name="app.workers.tasks.pipeline.monitor_execution")
+def monitor_execution(execution_id: str):
+    """
+    Monitor a running pipeline execution and update status
+
+    Args:
+        execution_id: Execution UUID
+
+    Returns:
+        Updated execution status
+    """
+    logger.info(f"Monitoring pipeline execution: {execution_id}")
+    db: Session = SessionLocal()
+
+    try:
+        # 1. Load execution from database
+        execution = db.query(PipelineExecution).filter(
+            PipelineExecution.id == UUID(execution_id)
+        ).first()
+
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        if not execution.airflow_dag_run_id:
+            logger.warning(f"Execution {execution_id} has no Airflow DAG run ID")
+            return {"status": "unknown", "message": "No Airflow DAG run ID"}
+
+        # 2. Get status from Airflow
+        airflow_client = get_airflow_client()
+        pipeline = db.query(Pipeline).filter(Pipeline.id == execution.pipeline_id).first()
+        dag_id = f"pipeline_{str(pipeline.id).replace('-', '_')}"
+
+        import asyncio
+        dag_run_status = asyncio.run(airflow_client.get_dag_run_status(
+            dag_id=dag_id,
+            dag_run_id=execution.airflow_dag_run_id,
+        ))
+
+        logger.info(f"Airflow DAG run status: {dag_run_status['state']}")
+
+        # 3. Update execution status based on Airflow state
+        airflow_state = dag_run_status["state"]
+
+        # Map Airflow states to our execution states
+        state_mapping = {
+            "running": "running",
+            "success": "success",
+            "failed": "failed",
+            "queued": "pending",
+        }
+
+        new_status = state_mapping.get(airflow_state, "unknown")
+
+        # Update execution
+        execution.status = new_status
+
+        if dag_run_status.get("start_date"):
+            execution.started_at = dag_run_status["start_date"]
+
+        if dag_run_status.get("end_date"):
+            execution.completed_at = dag_run_status["end_date"]
+
+            # Calculate duration
+            if execution.started_at and execution.completed_at:
+                from datetime import datetime
+                start = datetime.fromisoformat(execution.started_at)
+                end = datetime.fromisoformat(execution.completed_at)
+                execution.duration_seconds = int((end - start).total_seconds())
+
+        db.commit()
+
+        logger.info(f"Execution {execution_id} status updated to: {new_status}")
+
+        return {
+            "status": new_status,
+            "execution_id": execution_id,
+            "airflow_state": airflow_state,
+            "started_at": execution.started_at,
+            "completed_at": execution.completed_at,
+            "duration_seconds": execution.duration_seconds,
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to monitor execution: {str(e)}")
+        raise
+
+    finally:
+        db.close()
+
+
 @celery_app.task(name="app.workers.tasks.pipeline.cancel_pipeline")
 def cancel_pipeline(pipeline_id: str, execution_id: str):
     """
@@ -89,19 +263,51 @@ def cancel_pipeline(pipeline_id: str, execution_id: str):
         execution_id: Execution UUID
     """
     logger.info(f"Cancelling pipeline execution: {execution_id}")
+    db: Session = SessionLocal()
 
     try:
-        # TODO: Implement pipeline cancellation logic
-        # This would involve:
-        # 1. Stop Airflow DAG run
-        # 2. Update execution status to cancelled
-        # 3. Cleanup resources
+        # 1. Load execution from database
+        execution = db.query(PipelineExecution).filter(
+            PipelineExecution.id == UUID(execution_id)
+        ).first()
+
+        if not execution:
+            raise ValueError(f"Execution not found: {execution_id}")
+
+        if not execution.airflow_dag_run_id:
+            logger.warning(f"Execution {execution_id} has no Airflow DAG run ID")
+            # Just update status to cancelled
+            execution.status = "cancelled"
+            db.commit()
+            return {"status": "cancelled", "message": "Execution cancelled (no Airflow run)"}
+
+        # 2. Cancel Airflow DAG run
+        airflow_client = get_airflow_client()
+        pipeline = db.query(Pipeline).filter(Pipeline.id == execution.pipeline_id).first()
+        dag_id = f"pipeline_{str(pipeline.id).replace('-', '_')}"
+
+        import asyncio
+        asyncio.run(airflow_client.cancel_dag_run(
+            dag_id=dag_id,
+            dag_run_id=execution.airflow_dag_run_id,
+        ))
+
+        # 3. Update execution status to cancelled
+        execution.status = "cancelled"
+        execution.completed_at = datetime.utcnow().isoformat()
+        db.commit()
+
+        logger.info(f"Pipeline execution cancelled: {execution_id}")
 
         return {
             "status": "success",
             "execution_id": execution_id,
             "message": "Pipeline execution cancelled",
         }
+
     except Exception as e:
         logger.error(f"Failed to cancel pipeline: {str(e)}")
         raise
+
+    finally:
+        db.close()
