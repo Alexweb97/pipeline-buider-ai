@@ -142,8 +142,13 @@ class ETLOperator(BaseOperator):
             # Get the class
             module_class = getattr(module, class_name)
 
-            # Instantiate with config and db
-            return module_class(self.module_config, db)
+            # Instantiate based on node type
+            # Extractors and Loaders need db connection, Transformers don't
+            if self.node_type in ["extractor", "loader"]:
+                return module_class(self.module_config, db)
+            else:
+                # Transformers only need config
+                return module_class(self.module_config)
 
         except Exception as e:
             logger.error(f"Failed to load module class {self.module_class}: {str(e)}")

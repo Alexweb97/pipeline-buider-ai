@@ -5,9 +5,10 @@ from uuid import uuid4
 
 from sqlalchemy import String, Text, Boolean, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from app.db.base import Base
+from app.db.compat import mapped_column
 
 
 class Pipeline(Base):

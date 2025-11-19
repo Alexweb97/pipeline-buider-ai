@@ -46,29 +46,27 @@ task_rest_api_extractor_1763455880430 = ETLOperator(
     task_id='rest-api-extractor-1763455880430',
     etl_node_id='rest-api-extractor-1763455880430',
     node_type='extractor',
-    module_class='app.modules.extractors.rest-api-extractor.RestApi',
+    module_class='app.modules.extractors.rest_api_extractor.RestAPIExtractor',
     module_config={'url': 'https://api.insee.fr/melodi/data/DS_FILOSOFI_AGE_TP_NIVVIE', 'method': 'GET', 'auth_type': 'none'},
     database_url=DATABASE_URL,
     xcom_pull_keys=[],
     dag=dag,
 )
-
 task_python_transformer_1763455948664 = ETLOperator(
     task_id='python-transformer-1763455948664',
     etl_node_id='python-transformer-1763455948664',
     node_type='transformer',
-    module_class='app.modules.transformers.python-transformer.Python',
-    module_config={'code': "def transform(df):\n    return df", 'timeout': 30},
+    module_class='app.modules.transformers.python_transformer.PythonTransformer',
+    module_config={'code': "def transform(df):\n    # 1. Renommer les colonnes en supprimant les préfixes (dimensions., measures., attributes.)\n    new_columns = {}\n    for col in df.columns:\n        # Supprimer les préfixes comme 'dimensions.', 'measures.', 'attributes.'\n        if '.' in col:\n            # Prendre la dernière partie après le dernier point\n            new_name = col.split('.')[-1]\n            new_columns[col] = new_name\n        else:\n            new_columns[col] = col\n\n    df = df.rename(columns=new_columns)\n\n    # 2. Supprimer les colonnes avec plus de 80% de valeurs null\n    threshold = len(df) * 0.8\n    columns_to_drop = []\n\n    for col in df.columns:\n        null_count = df[col].isna().sum()\n        if null_count > threshold:\n            columns_to_drop.append(col)\n\n    df = df.drop(columns=columns_to_drop)\n\n    # Retourner le DataFrame transformé\n    return df", 'timeout': 30},
     database_url=DATABASE_URL,
     xcom_pull_keys=['rest-api-extractor-1763455880430'],
     dag=dag,
 )
-
 task_clean_transformer_1763481489649 = ETLOperator(
     task_id='clean-transformer-1763481489649',
     etl_node_id='clean-transformer-1763481489649',
     node_type='transformer',
-    module_class='app.modules.transformers.clean-transformer.Clean',
+    module_class='app.modules.transformers.clean_transformer.CleanTransformer',
     module_config={'remove_nulls': False, 'trim_whitespace': True, 'lowercase_columns': True},
     database_url=DATABASE_URL,
     xcom_pull_keys=['python-transformer-1763455948664'],

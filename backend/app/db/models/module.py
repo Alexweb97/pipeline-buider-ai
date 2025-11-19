@@ -5,7 +5,9 @@ from uuid import uuid4
 
 from sqlalchemy import String, Text, Boolean, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped
+
+from app.db.compat import mapped_column
 
 from app.db.base import Base
 

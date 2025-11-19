@@ -131,11 +131,14 @@ class DAGGenerator:
             task_var = f"task_{node_id.replace('-', '_')}"
             task_variables[node_id] = task_var
 
+            # Convert module_id to Python module name (replace dashes with underscores)
+            module_name = module_id.replace('-', '_')
+
             task_code = f"""{task_var} = ETLOperator(
     task_id='{node_id}',
     etl_node_id='{node_id}',
     node_type='{node_type}',
-    module_class='app.modules.{node_type}s.{module_id}.{self._get_class_name(module_id)}',
+    module_class='app.modules.{node_type}s.{module_name}.{self._get_class_name(module_id)}',
     module_config={module_config!r},
     database_url=DATABASE_URL,
     xcom_pull_keys={upstream_tasks!r},
@@ -216,9 +219,23 @@ dag = DAG(
         Returns:
             Class name
         """
-        # Remove type suffix (e.g., '-extractor', '-transformer', '-loader')
+        # Manual mapping for special cases where naming isn't predictable
+        class_name_mapping = {
+            "rest-api-extractor": "RestAPIExtractor",
+            "python-transformer": "PythonTransformer",
+            "clean-transformer": "CleanTransformer",
+            "sql-transformer": "SQLTransformer",
+        }
+
+        # Check if we have a manual mapping
+        if module_id in class_name_mapping:
+            return class_name_mapping[module_id]
+
+        # Detect module type
+        module_type = None
         for suffix in ["-extractor", "-transformer", "-loader"]:
             if module_id.endswith(suffix):
+                module_type = suffix[1:]  # Remove leading dash
                 module_id = module_id[: -len(suffix)]
                 break
 
@@ -227,11 +244,11 @@ dag = DAG(
         class_name = "".join(part.capitalize() for part in parts)
 
         # Add type suffix
-        if "extractor" in module_id:
+        if module_type == "extractor":
             return f"{class_name}Extractor"
-        elif "transformer" in module_id:
+        elif module_type == "transformer":
             return f"{class_name}Transformer"
-        elif "loader" in module_id:
+        elif module_type == "loader":
             return f"{class_name}Loader"
         else:
             return class_name
