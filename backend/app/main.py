@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import structlog
 
 from app.config import settings
-from app.api.v1 import auth, users, pipelines, executions, connections, modules, security, uploads, transforms, schedules
+from app.api.v1 import auth, users, pipelines, executions, connections, modules, security, uploads, transforms, schedules, dashboards
 from app.api import websocket
 from app.db.session import engine
 from app.db.base import Base
@@ -148,6 +148,12 @@ app.include_router(
     schedules.router,
     prefix="/api/v1/schedules",
     tags=["schedules"]
+)
+
+app.include_router(
+    dashboards.router,
+    prefix="/api/v1/dashboards",
+    tags=["dashboards"]
 )
 
 # WebSocket endpoint
