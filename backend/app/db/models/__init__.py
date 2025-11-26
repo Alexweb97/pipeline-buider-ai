@@ -11,6 +11,8 @@ from app.db.models.active_session import ActiveSession
 from app.db.models.audit_event import AuditEvent
 from app.db.models.uploaded_file import UploadedFile
 from app.db.models.schedule import Schedule
+from app.db.models.dashboard import Dashboard
+from app.db.models.dashboard_share import DashboardShare
 
 __all__ = [
     "User",
@@ -23,4 +25,6 @@ __all__ = [
     "AuditEvent",
     "UploadedFile",
     "Schedule",
+    "Dashboard",
+    "DashboardShare",
 ]
