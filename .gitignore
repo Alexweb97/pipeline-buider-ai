@@ -78,6 +78,8 @@ airflow.db
 airflow.cfg
 airflow-webserver.pid
 airflow-scheduler.pid
+# Generated DAG files
+backend/dags/pipeline_*.py
 
 # Temporary files
 tmp/

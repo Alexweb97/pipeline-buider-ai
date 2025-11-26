@@ -3,6 +3,7 @@ Pipeline Execution Tasks
 """
 from datetime import datetime
 from uuid import UUID
+from croniter import croniter
 
 from celery import Task
 from celery.utils.log import get_task_logger
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.airflow.dag_generator import DAGGenerator
 from app.db.models.execution import PipelineExecution
+from app.db.models.schedule import Schedule
 from app.db.models.pipeline import Pipeline
 from app.db.session import SessionLocal
 from app.integrations.airflow_client import get_airflow_client
@@ -146,21 +148,97 @@ def check_scheduled_pipelines():
     based on their schedule.
     """
     logger.info("Checking scheduled pipelines")
+    db: Session = SessionLocal()
 
     try:
-        # TODO: Implement scheduled pipeline checking logic
-        # This would involve:
-        # 1. Query database for scheduled pipelines
-        # 2. Check if any are due for execution
-        # 3. Trigger execution for due pipelines
+        now = datetime.utcnow()
+        triggered_count = 0
+
+        # Query active schedules that are due for execution
+        schedules = (
+            db.query(Schedule)
+            .filter(
+                Schedule.status == "active",
+                Schedule.next_run_at.isnot(None),
+            )
+            .all()
+        )
+
+        logger.info(f"Found {len(schedules)} active schedules to check")
+
+        for schedule in schedules:
+            try:
+                # Check if schedule is due
+                next_run = datetime.fromisoformat(schedule.next_run_at)
+
+                if next_run <= now:
+                    logger.info(f"Schedule {schedule.name} ({schedule.id}) is due for execution")
+
+                    # Check start_date and end_date constraints
+                    if schedule.start_date:
+                        start = datetime.fromisoformat(schedule.start_date)
+                        if now < start:
+                            logger.info(f"Schedule {schedule.id} start_date not reached yet")
+                            continue
+
+                    if schedule.end_date:
+                        end = datetime.fromisoformat(schedule.end_date)
+                        if now > end:
+                            logger.info(f"Schedule {schedule.id} has expired")
+                            schedule.status = "expired"
+                            db.commit()
+                            continue
+
+                    # Trigger pipeline execution
+                    task = execute_pipeline.delay(
+                        pipeline_id=str(schedule.pipeline_id),
+                        params=schedule.config.get("params", {}),
+                        trigger_type="scheduled",
+                        user_id=str(schedule.created_by),
+                    )
+
+                    logger.info(f"Triggered execution for schedule {schedule.id}, task: {task.id}")
+
+                    # Update schedule statistics
+                    schedule.total_runs += 1
+                    schedule.last_run_at = now.isoformat()
+
+                    # Calculate next run time
+                    if schedule.cron_expression and schedule.frequency != "once":
+                        try:
+                            cron = croniter(schedule.cron_expression, now)
+                            next_run_time = cron.get_next(datetime)
+                            schedule.next_run_at = next_run_time.isoformat()
+                        except Exception as e:
+                            logger.error(f"Failed to calculate next run for schedule {schedule.id}: {e}")
+                            schedule.next_run_at = None
+                    else:
+                        # One-time schedule
+                        schedule.next_run_at = None
+                        if schedule.frequency == "once":
+                            schedule.status = "expired"
+
+                    db.commit()
+                    triggered_count += 1
+
+            except Exception as e:
+                logger.error(f"Error processing schedule {schedule.id}: {str(e)}")
+                continue
+
+        logger.info(f"Triggered {triggered_count} scheduled pipelines")
 
         return {
             "status": "success",
-            "message": "Scheduled pipelines checked",
+            "message": f"Checked {len(schedules)} schedules, triggered {triggered_count}",
+            "triggered_count": triggered_count,
         }
+
     except Exception as e:
         logger.error(f"Failed to check scheduled pipelines: {str(e)}")
         raise
+
+    finally:
+        db.close()
 
 
 @celery_app.task(name="app.workers.tasks.pipeline.monitor_execution")

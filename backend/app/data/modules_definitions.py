@@ -253,7 +253,7 @@ MODULES_DATA = [
         "description": "Fetch data from REST API endpoints with custom headers and authentication",
         "type": "extractor",
         "category": "api",
-        "python_class": "app.modules.extractors.rest_api.RESTAPIExtractor",
+        "python_class": "app.modules.extractors.rest_api_extractor.RestAPIExtractor",
         "icon": "Api",
         "config_schema": {
             "type": "object",

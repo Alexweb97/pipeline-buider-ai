@@ -41,7 +41,7 @@ RUN uv venv && \
     httpx aiohttp websockets \
     jsonschema python-dateutil \
     structlog python-json-logger sentry-sdk[fastapi] \
-    email-validator python-slugify tenacity \
+    email-validator python-slugify tenacity croniter \
     pytest pytest-asyncio pytest-cov pytest-mock \
     black isort flake8 pylint mypy ruff \
     ipython ipdb
@@ -80,7 +80,7 @@ RUN uv venv && \
     httpx aiohttp websockets \
     jsonschema python-dateutil \
     structlog python-json-logger sentry-sdk[fastapi] \
-    email-validator python-slugify tenacity
+    email-validator python-slugify tenacity croniter
 
 # Copy application code
 COPY . .
