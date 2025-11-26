@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { DashboardGrid } from '../components/dashboards/DashboardGrid';
+import DashboardLayout from '../components/DashboardLayout';
 
 export const DashboardViewPage: React.FC = () => {
   const { dashboardId } = useParams<{ dashboardId: string }>();
@@ -55,49 +56,56 @@ export const DashboardViewPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/dashboards')}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            Back to Dashboards
-          </button>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => navigate('/dashboards')}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              Back to Dashboards
+            </button>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (!currentDashboard) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Dashboard not found</p>
-          <button
-            onClick={() => navigate('/dashboards')}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            Back to Dashboards
-          </button>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Dashboard not found</p>
+            <button
+              onClick={() => navigate('/dashboards')}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              Back to Dashboards
+            </button>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
+      <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -161,6 +169,7 @@ export const DashboardViewPage: React.FC = () => {
           editable={false}
         />
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
