@@ -4,12 +4,44 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  CircularProgress,
+  Alert,
+  useTheme,
+  alpha,
+  Chip,
+} from '@mui/material';
+import {
+  Add,
+  Visibility,
+  Edit,
+  Delete,
+  BarChart,
+  Dashboard as DashboardIcon,
+} from '@mui/icons-material';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { usePipelineStore } from '../stores/pipelineStore';
 import { DashboardCreate } from '../types/dashboard';
 import DashboardLayout from '../components/DashboardLayout';
 
 export const DashboardsPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const {
     dashboards,
@@ -68,208 +100,277 @@ export const DashboardsPage: React.FC = () => {
   if (loading && dashboards.length === 0) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboards...</p>
-          </div>
-        </div>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography variant="body1" color="text.secondary">
+              Loading dashboards...
+            </Typography>
+          </Box>
+        </Box>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboards</h1>
-              <p className="text-gray-600 mt-2">
-                Create and manage your data visualization dashboards
-              </p>
-            </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              + Create Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            Dashboards
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Create and manage your data visualization dashboards
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => setShowCreateModal(true)}
+          sx={{ height: 'fit-content' }}
+        >
+          Create Dashboard
+        </Button>
+      </Box>
 
       {/* Error Message */}
       {error && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        </div>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
       )}
 
       {/* Dashboard Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {dashboards.length === 0 ? (
-          <div className="flex items-center justify-center h-64 bg-white rounded-lg border-2 border-dashed border-gray-300">
-            <div className="text-center">
-              <p className="text-gray-500 mb-4">No dashboards yet</p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+      {dashboards.length === 0 ? (
+        <Card
+          elevation={0}
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            textAlign: 'center',
+            py: 8,
+          }}
+        >
+          <DashboardIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" gutterBottom>
+            No dashboards yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Get started by creating your first dashboard
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => setShowCreateModal(true)}
+          >
+            Create Dashboard
+          </Button>
+        </Card>
+      ) : (
+        <Grid container spacing={3}>
+          {dashboards.map((dashboard) => (
+            <Grid item xs={12} md={6} lg={4} key={dashboard.id}>
+              <Card
+                elevation={0}
+                sx={{
+                  height: '100%',
+                  border: `1px solid ${theme.palette.divider}`,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[4],
+                  },
+                }}
               >
-                + Create your first dashboard
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dashboards.map((dashboard) => (
-              <div
-                key={dashboard.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
-              >
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {dashboard.name}
-                  </h3>
+                <CardContent>
+                  {/* Dashboard Icon and Name */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: 'primary.main',
+                      }}
+                    >
+                      <BarChart sx={{ fontSize: 28 }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="h6" fontWeight="bold" noWrap>
+                        {dashboard.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(dashboard.updated_at).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Description */}
                   {dashboard.description && (
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        mb: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '40px',
+                      }}
+                    >
                       {dashboard.description}
-                    </p>
+                    </Typography>
                   )}
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                    <span>
-                      {dashboard.config.charts?.length || 0} charts
-                    </span>
-                    <span>
-                      {new Date(dashboard.updated_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
+
+                  {/* Stats */}
+                  <Box sx={{ mb: 2 }}>
+                    <Chip
+                      label={`${dashboard.config.charts?.length || 0} charts`}
+                      size="small"
+                      sx={{ mr: 1 }}
+                    />
+                    <Chip
+                      label={dashboard.theme}
+                      size="small"
+                      sx={{
+                        bgcolor: alpha(theme.palette.info.main, 0.1),
+                        color: 'info.main',
+                      }}
+                    />
+                  </Box>
+
+                  {/* Actions */}
+                  <Box
+                    sx={{
+                      pt: 2,
+                      borderTop: `1px solid ${theme.palette.divider}`,
+                      display: 'flex',
+                      gap: 1,
+                    }}
+                  >
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="small"
+                      startIcon={<Visibility />}
                       onClick={() => navigate(`/dashboards/${dashboard.id}`)}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
                     >
                       View
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Edit />}
                       onClick={() => navigate(`/dashboards/${dashboard.id}/edit`)}
-                      className="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <IconButton
+                      size="small"
+                      color="error"
                       onClick={() => handleDelete(dashboard.id)}
-                      className="px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded hover:bg-red-50"
+                      sx={{ ml: 1 }}
                     >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Create Dashboard
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={newDashboard.name}
-                  onChange={(e) =>
-                    setNewDashboard({ ...newDashboard, name: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="My Dashboard"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={newDashboard.description}
-                  onChange={(e) =>
-                    setNewDashboard({ ...newDashboard, description: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Dashboard description..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pipeline *
-                </label>
-                <select
-                  value={newDashboard.pipeline_id}
-                  onChange={(e) =>
-                    setNewDashboard({ ...newDashboard, pipeline_id: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a pipeline</option>
-                  {pipelines.map((pipeline) => (
-                    <option key={pipeline.id} value={pipeline.id}>
+      <Dialog
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create Dashboard</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Name"
+              value={newDashboard.name}
+              onChange={(e) =>
+                setNewDashboard({ ...newDashboard, name: e.target.value })
+              }
+              placeholder="My Dashboard"
+              autoFocus
+              required
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              multiline
+              rows={3}
+              value={newDashboard.description}
+              onChange={(e) =>
+                setNewDashboard({ ...newDashboard, description: e.target.value })
+              }
+              placeholder="Dashboard description..."
+            />
+            <FormControl fullWidth required>
+              <InputLabel>Pipeline</InputLabel>
+              <Select
+                value={newDashboard.pipeline_id}
+                label="Pipeline"
+                onChange={(e) =>
+                  setNewDashboard({ ...newDashboard, pipeline_id: e.target.value })
+                }
+              >
+                {pipelines.length === 0 ? (
+                  <MenuItem disabled>No pipelines available</MenuItem>
+                ) : (
+                  pipelines.map((pipeline) => (
+                    <MenuItem key={pipeline.id} value={pipeline.id}>
                       {pipeline.name}
-                    </option>
-                  ))}
-                </select>
-                {pipelines.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    No pipelines available. Please create a pipeline first.
-                  </p>
+                    </MenuItem>
+                  ))
                 )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Theme
-                </label>
-                <select
-                  value={newDashboard.theme}
-                  onChange={(e) =>
-                    setNewDashboard({ ...newDashboard, theme: e.target.value as 'light' | 'dark' })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              </Select>
+              {pipelines.length === 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                  No pipelines available. Please create a pipeline first.
+                </Typography>
+              )}
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Theme</InputLabel>
+              <Select
+                value={newDashboard.theme}
+                label="Theme"
+                onChange={(e) =>
+                  setNewDashboard({ ...newDashboard, theme: e.target.value as 'light' | 'dark' })
+                }
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={!newDashboard.name || !newDashboard.pipeline_id}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      </div>
+                <MenuItem value="light">Light</MenuItem>
+                <MenuItem value="dark">Dark</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowCreateModal(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreate}
+            disabled={!newDashboard.name || !newDashboard.pipeline_id}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashboardLayout>
   );
 };

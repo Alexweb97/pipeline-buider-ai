@@ -4,6 +4,22 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  FormControlLabel,
+  Switch,
+  CircularProgress,
+  Alert,
+  Tooltip,
+} from '@mui/material';
+import {
+  ArrowBack,
+  Refresh,
+  Edit,
+} from '@mui/icons-material';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { DashboardGrid } from '../components/dashboards/DashboardGrid';
 import DashboardLayout from '../components/DashboardLayout';
@@ -57,12 +73,14 @@ export const DashboardViewPage: React.FC = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
-          </div>
-        </div>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography variant="body1" color="text.secondary">
+              Loading dashboard...
+            </Typography>
+          </Box>
+        </Box>
       </DashboardLayout>
     );
   }
@@ -70,17 +88,20 @@ export const DashboardViewPage: React.FC = () => {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <p className="text-red-600 mb-4">{error}</p>
-            <button
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+            <Button
+              variant="contained"
+              startIcon={<ArrowBack />}
               onClick={() => navigate('/dashboards')}
-              className="text-blue-600 hover:text-blue-700"
             >
               Back to Dashboards
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
       </DashboardLayout>
     );
   }
@@ -88,88 +109,93 @@ export const DashboardViewPage: React.FC = () => {
   if (!currentDashboard) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">Dashboard not found</p>
-            <button
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Dashboard not found
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<ArrowBack />}
               onClick={() => navigate('/dashboards')}
-              className="text-blue-600 hover:text-blue-700"
             >
               Back to Dashboards
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <button
-                onClick={() => navigate('/dashboards')}
-                className="text-gray-600 hover:text-gray-900 mb-2 flex items-center text-sm"
-              >
-                ← Back to Dashboards
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {currentDashboard.name}
-              </h1>
-              {currentDashboard.description && (
-                <p className="text-gray-600 mt-1">{currentDashboard.description}</p>
-              )}
-            </div>
+      <Box sx={{ mb: 4 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/dashboards')}
+          sx={{ mb: 2 }}
+        >
+          Back to Dashboards
+        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              {currentDashboard.name}
+            </Typography>
+            {currentDashboard.description && (
+              <Typography variant="body1" color="text.secondary">
+                {currentDashboard.description}
+              </Typography>
+            )}
+          </Box>
 
-            <div className="flex items-center space-x-4">
-              {/* Auto-refresh toggle */}
-              {currentDashboard.config.refreshInterval && (
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Auto-refresh toggle */}
+            {currentDashboard.config.refreshInterval && (
+              <FormControlLabel
+                control={
+                  <Switch
                     checked={autoRefresh}
                     onChange={(e) => setAutoRefresh(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    color="primary"
                   />
-                  <span className="text-sm text-gray-600">
+                }
+                label={
+                  <Typography variant="body2" color="text.secondary">
                     Auto-refresh ({currentDashboard.config.refreshInterval}s)
-                  </span>
-                </label>
-              )}
+                  </Typography>
+                }
+              />
+            )}
 
-              {/* Refresh button */}
-              <button
-                onClick={handleRefresh}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Refresh
-              </button>
+            {/* Refresh button */}
+            <Tooltip title="Refresh data">
+              <IconButton onClick={handleRefresh} color="primary">
+                <Refresh />
+              </IconButton>
+            </Tooltip>
 
-              {/* Edit button */}
-              <button
-                onClick={handleEdit}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-              >
-                Edit
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* Edit button */}
+            <Button
+              variant="contained"
+              startIcon={<Edit />}
+              onClick={handleEdit}
+            >
+              Edit
+            </Button>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Dashboard Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <Box>
         <DashboardGrid
           dashboard={currentDashboard}
           dashboardData={(dashboardData || {}) as Record<string, any[]>}
           editable={false}
         />
-      </div>
-      </div>
+      </Box>
     </DashboardLayout>
   );
 };
