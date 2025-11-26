@@ -35,7 +35,7 @@ interface DashboardState {
   clearCurrentDashboard: () => void;
 }
 
-export const useDashboardStore = create<DashboardState>((set, get) => ({
+export const useDashboardStore = create<DashboardState>((set) => ({
   dashboards: [],
   currentDashboard: null,
   dashboardData: null,

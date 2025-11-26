@@ -22,7 +22,7 @@ interface BarChartProps {
 }
 
 export const BarChart: React.FC<BarChartProps> = ({ data, config, height = 300 }) => {
-  const { xAxis, yAxis, options } = config;
+  const { xAxis = 'x', yAxis = 'y', options } = config;
 
   return (
     <div className="w-full">

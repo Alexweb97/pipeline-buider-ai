@@ -102,3 +102,32 @@ export interface ChartData {
   config?: ChartConfig;
   message?: string;
 }
+
+// API Request/Response Types
+export interface DashboardCreate {
+  pipeline_id: string;
+  name: string;
+  description?: string;
+  theme?: 'light' | 'dark';
+  config?: DashboardConfig;
+  layout?: LayoutConfig;
+}
+
+export interface DashboardUpdate {
+  name?: string;
+  description?: string;
+  theme?: 'light' | 'dark';
+  config?: DashboardConfig;
+  layout?: LayoutConfig;
+}
+
+export interface DashboardListResponse {
+  items: Dashboard[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+export interface DashboardDataResponse {
+  [chartId: string]: any[];
+}

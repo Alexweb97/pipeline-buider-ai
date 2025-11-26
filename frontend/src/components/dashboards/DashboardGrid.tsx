@@ -28,7 +28,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
   const charts = config.charts || [];
 
   // Handle layout change
-  const handleLayoutChange = (currentLayout: Layout[], allLayouts: any) => {
+  const handleLayoutChange = (currentLayout: Layout[], _allLayouts: any) => {
     if (editable && onLayoutChange) {
       onLayoutChange({ lg: currentLayout });
     }

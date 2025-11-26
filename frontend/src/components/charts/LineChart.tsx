@@ -22,7 +22,7 @@ interface LineChartProps {
 }
 
 export const LineChart: React.FC<LineChartProps> = ({ data, config, height = 300 }) => {
-  const { xAxis, yAxis, options } = config;
+  const { xAxis = 'x', yAxis = 'y', options } = config;
 
   return (
     <div className="w-full">
