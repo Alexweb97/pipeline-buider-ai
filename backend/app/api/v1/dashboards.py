@@ -294,39 +294,24 @@ def get_dashboard_data(
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
-    Get data for dashboard visualizations
-    This will be implemented to fetch data from the pipeline execution results
+    Get data for dashboard visualizations from the latest pipeline execution
     """
-    dashboard = db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+    from app.services.dashboard_data_service import DashboardDataService
 
-    if not dashboard:
+    try:
+        data = DashboardDataService.get_dashboard_data(
+            db=db,
+            dashboard_id=dashboard_id,
+            user_id=current_user.id,
+        )
+        return data
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Dashboard not found",
+            detail=str(e),
         )
-
-    # Check access permissions
-    is_owner = dashboard.created_by == current_user.id
-    has_share = (
-        db.query(DashboardShare)
-        .filter(
-            DashboardShare.dashboard_id == dashboard_id,
-            DashboardShare.user_id == current_user.id,
-        )
-        .first()
-    )
-
-    if not (is_owner or has_share):
+    except PermissionError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have access to this dashboard",
+            detail=str(e),
         )
-
-    # TODO: Implement data fetching from pipeline execution results
-    # For now, return a placeholder
-    return {
-        "dashboard_id": str(dashboard_id),
-        "pipeline_id": str(dashboard.pipeline_id),
-        "data": {},
-        "message": "Data fetching to be implemented",
-    }
