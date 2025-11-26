@@ -2,7 +2,7 @@
  * Dashboard API Client
  * Handles all dashboard-related API calls
  */
-import api from './config';
+import api from './client';
 
 export interface Dashboard {
   id: string;
@@ -73,24 +73,21 @@ export const getDashboards = async (params?: {
   limit?: number;
   pipeline_id?: string;
 }): Promise<DashboardListResponse> => {
-  const response = await api.get('/dashboards', { params });
-  return response.data;
+  return api.get<DashboardListResponse>('/api/v1/dashboards', { params });
 };
 
 /**
  * Get a specific dashboard
  */
 export const getDashboard = async (dashboardId: string): Promise<DashboardWithShares> => {
-  const response = await api.get(`/dashboards/${dashboardId}`);
-  return response.data;
+  return api.get<DashboardWithShares>(`/api/v1/dashboards/${dashboardId}`);
 };
 
 /**
  * Create a new dashboard
  */
 export const createDashboard = async (data: DashboardCreate): Promise<Dashboard> => {
-  const response = await api.post('/dashboards', data);
-  return response.data;
+  return api.post<Dashboard>('/api/v1/dashboards', data);
 };
 
 /**
@@ -100,15 +97,14 @@ export const updateDashboard = async (
   dashboardId: string,
   data: DashboardUpdate
 ): Promise<Dashboard> => {
-  const response = await api.put(`/dashboards/${dashboardId}`, data);
-  return response.data;
+  return api.put<Dashboard>(`/api/v1/dashboards/${dashboardId}`, data);
 };
 
 /**
  * Delete a dashboard
  */
 export const deleteDashboard = async (dashboardId: string): Promise<void> => {
-  await api.delete(`/dashboards/${dashboardId}`);
+  await api.delete(`/api/v1/dashboards/${dashboardId}`);
 };
 
 /**
@@ -118,8 +114,7 @@ export const shareDashboard = async (
   dashboardId: string,
   data: { user_id: string; permission: 'view' | 'edit' }
 ): Promise<DashboardShare> => {
-  const response = await api.post(`/dashboards/${dashboardId}/shares`, data);
-  return response.data;
+  return api.post<DashboardShare>(`/api/v1/dashboards/${dashboardId}/shares`, data);
 };
 
 /**
@@ -129,7 +124,7 @@ export const removeDashboardShare = async (
   dashboardId: string,
   shareId: string
 ): Promise<void> => {
-  await api.delete(`/dashboards/${dashboardId}/shares/${shareId}`);
+  await api.delete(`/api/v1/dashboards/${dashboardId}/shares/${shareId}`);
 };
 
 /**
@@ -138,6 +133,5 @@ export const removeDashboardShare = async (
 export const getDashboardData = async (
   dashboardId: string
 ): Promise<DashboardDataResponse> => {
-  const response = await api.get(`/dashboards/${dashboardId}/data`);
-  return response.data;
+  return api.get<DashboardDataResponse>(`/api/v1/dashboards/${dashboardId}/data`);
 };

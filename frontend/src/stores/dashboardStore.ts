@@ -74,8 +74,20 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   fetchDashboardData: async (dashboardId: string) => {
     set({ loading: true, error: null });
     try {
-      const data = await getDashboardData(dashboardId);
-      set({ dashboardData: data, loading: false });
+      const response = await getDashboardData(dashboardId);
+      // Transform the response data into chart data map
+      // For now, all charts get the same data since backend returns one dataset
+      // TODO: Enhance backend to return data per chart
+      const chartDataMap: Record<string, any[]> = {};
+      if (response.data) {
+        // Get current dashboard config to know which charts exist
+        const state = useDashboardStore.getState();
+        const charts = state.currentDashboard?.config?.charts || [];
+        charts.forEach((chart: any) => {
+          chartDataMap[chart.id] = response.data || [];
+        });
+      }
+      set({ dashboardData: chartDataMap as any, loading: false });
     } catch (error: any) {
       set({
         error: error.response?.data?.detail || 'Failed to fetch dashboard data',
