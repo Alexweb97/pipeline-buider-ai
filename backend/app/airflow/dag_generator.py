@@ -13,6 +13,24 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
+def _get_module_class_map() -> dict[str, str]:
+    """
+    Build module class lookup from definitions.
+    This is called each time to avoid import caching issues.
+    """
+    import importlib
+    import app.data.modules_definitions as modules_def
+
+    # Force reload to get fresh data even if module was cached
+    importlib.reload(modules_def)
+
+    return {
+        module["name"]: module["python_class"]
+        for module in modules_def.MODULES_DATA
+        if "python_class" in module
+    }
+
+
 class DAGGenerator:
     """
     Generate Airflow DAG files from pipeline configurations
@@ -113,6 +131,9 @@ class DAGGenerator:
         tasks_code = []
         task_variables = {}
 
+        # Get fresh module class map to avoid caching issues
+        module_class_map = _get_module_class_map()
+
         for node in nodes:
             node_id = node["id"]
             node_data = node.get("data", {})
@@ -131,14 +152,27 @@ class DAGGenerator:
             task_var = f"task_{node_id.replace('-', '_')}"
             task_variables[node_id] = task_var
 
-            # Convert module_id to Python module name (replace dashes with underscores)
-            module_name = module_id.replace('-', '_')
+            # Extract base module name from node_id (remove timestamp suffix)
+            # e.g., 'rest-api-extractor-1763455880430' -> 'rest-api-extractor'
+            base_module_id = module_id
+            if base_module_id:
+                # Remove timestamp suffix if present (numbers at the end)
+                parts = base_module_id.split('-')
+                if parts[-1].isdigit():
+                    base_module_id = '-'.join(parts[:-1])
+
+            # Get module class from definitions or fallback to constructed name
+            module_class = module_class_map.get(base_module_id) or module_class_map.get(module_id)
+            if not module_class:
+                # Fallback: construct from module_id
+                module_name = (base_module_id or module_id).replace('-', '_')
+                module_class = f"app.modules.{node_type}s.{module_name}.{self._get_class_name(base_module_id or module_id)}"
 
             task_code = f"""{task_var} = ETLOperator(
     task_id='{node_id}',
     etl_node_id='{node_id}',
     node_type='{node_type}',
-    module_class='app.modules.{node_type}s.{module_name}.{self._get_class_name(module_id)}',
+    module_class='{module_class}',
     module_config={module_config!r},
     database_url=DATABASE_URL,
     xcom_pull_keys={upstream_tasks!r},

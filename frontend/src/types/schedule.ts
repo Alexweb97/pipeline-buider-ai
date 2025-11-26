@@ -42,6 +42,8 @@ export interface Schedule {
   start_date?: string;
   end_date?: string;
   config: ScheduleConfig;
+  is_airflow_synced?: boolean;
+  airflow_dag_id?: string;
 }
 
 export interface ScheduleConfig {
