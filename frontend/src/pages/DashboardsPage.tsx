@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardStore } from '../stores/dashboardStore';
+import { usePipelineStore } from '../stores/pipelineStore';
 import { DashboardCreate } from '../types/dashboard';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -19,6 +20,8 @@ export const DashboardsPage: React.FC = () => {
     deleteDashboard,
   } = useDashboardStore();
 
+  const { pipelines, fetchPipelines } = usePipelineStore();
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newDashboard, setNewDashboard] = useState<Partial<DashboardCreate>>({
     name: '',
@@ -31,7 +34,8 @@ export const DashboardsPage: React.FC = () => {
 
   useEffect(() => {
     fetchDashboards();
-  }, [fetchDashboards]);
+    fetchPipelines();
+  }, [fetchDashboards, fetchPipelines]);
 
   const handleCreate = async () => {
     if (!newDashboard.name || !newDashboard.pipeline_id) {
@@ -209,17 +213,27 @@ export const DashboardsPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pipeline ID *
+                  Pipeline *
                 </label>
-                <input
-                  type="text"
+                <select
                   value={newDashboard.pipeline_id}
                   onChange={(e) =>
                     setNewDashboard({ ...newDashboard, pipeline_id: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="UUID of the pipeline"
-                />
+                >
+                  <option value="">Select a pipeline</option>
+                  {pipelines.map((pipeline) => (
+                    <option key={pipeline.id} value={pipeline.id}>
+                      {pipeline.name}
+                    </option>
+                  ))}
+                </select>
+                {pipelines.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No pipelines available. Please create a pipeline first.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
