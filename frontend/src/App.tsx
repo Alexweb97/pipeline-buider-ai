@@ -22,6 +22,8 @@ import SecurityPage from './pages/SecurityPage';
 import SettingsPage from './pages/SettingsPage';
 import { PipelineBuilderPage } from './pages/PipelineBuilderPage';
 import TestModulesPage from './pages/TestModules';
+import { DashboardsPage } from './pages/DashboardsPage';
+import { DashboardViewPage } from './pages/DashboardViewPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create modern theme
@@ -284,6 +286,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboards"
+              element={
+                <ProtectedRoute>
+                  <DashboardsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboards/:dashboardId"
+              element={
+                <ProtectedRoute>
+                  <DashboardViewPage />
                 </ProtectedRoute>
               }
             />
