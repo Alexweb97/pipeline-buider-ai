@@ -14,7 +14,6 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import PipelinesPage from './pages/PipelinesPage';
 import DataSourcesPage from './pages/DataSourcesPage';
-import TransformationsPage from './pages/TransformationsPage';
 import SchedulesPage from './pages/SchedulesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import UploadsPage from './pages/UploadsPage';
@@ -228,14 +227,6 @@ function App() {
               }
             />
 
-            <Route
-              path="/transformations"
-              element={
-                <ProtectedRoute>
-                  <TransformationsPage />
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/schedules"
