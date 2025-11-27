@@ -94,7 +94,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { text: 'Pipeline Builder', icon: <Edit />, path: '/pipeline-builder', badge: null, enabled: true },
     { text: 'Pipelines', icon: <AccountTree />, path: '/pipelines', badge: pipelines.length > 0 ? pipelines.length.toString() : null, enabled: true },
     { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: null, enabled: true },
-    { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: null, enabled: true },
     { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: null, enabled: true },
     { text: 'Dashboards', icon: <BarChart />, path: '/dashboards', badge: null, enabled: true },
     { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: null, enabled: true },
