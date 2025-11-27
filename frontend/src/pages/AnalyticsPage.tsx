@@ -31,7 +31,14 @@ import DashboardLayout from '../components/DashboardLayout';
 import { useAnalyticsStore } from '../stores/analyticsStore';
 import { usePipelineStore } from '../stores/pipelineStore';
 
-const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6'];
+// Status-specific colors
+const STATUS_COLORS: Record<string, string> = {
+  success: '#10b981',    // green
+  failed: '#ef4444',     // red
+  running: '#3b82f6',    // blue
+  pending: '#f59e0b',    // orange
+  cancelled: '#8b5cf6',  // purple
+};
 
 export default function AnalyticsPage() {
   const theme = useTheme();
@@ -160,6 +167,7 @@ export default function AnalyticsPage() {
   const statusData = analytics.status_distribution.map((item) => ({
     name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
     value: item.count,
+    status: item.status.toLowerCase(),
   }));
 
   const performanceData = analytics.pipeline_performance
@@ -308,7 +316,7 @@ export default function AnalyticsPage() {
                     dataKey="value"
                   >
                     {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status] || '#94a3b8'} />
                     ))}
                   </Pie>
                   <Tooltip />
