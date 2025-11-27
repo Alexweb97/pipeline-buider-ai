@@ -2,7 +2,7 @@
  * Analytics API Client
  * Handles requests to the analytics endpoints
  */
-import { api } from './client';
+import apiClient from './client';
 
 // Types
 export interface ExecutionTrend {
@@ -52,5 +52,5 @@ export interface AnalyticsParams {
 export const getAnalyticsOverview = async (
   params?: AnalyticsParams
 ): Promise<AnalyticsOverview> => {
-  return api.get<AnalyticsOverview>('/api/v1/analytics/overview', { params });
+  return apiClient.get<AnalyticsOverview>('/api/v1/analytics/overview', { params });
 };
