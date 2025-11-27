@@ -41,15 +41,15 @@ def generate_pipeline(
         pipeline_config = AIService.generate_pipeline(request.prompt)
         return AIGenerateResponse(**pipeline_config)
     except ValueError as e:
-        raise HTTPException from e(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
-        raise HTTPException from e(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate pipeline: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/improve", response_model=AIImproveResponse)
@@ -73,15 +73,15 @@ def improve_pipeline(
         )
         return AIImproveResponse(**improved_config)
     except ValueError as e:
-        raise HTTPException from e(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
-        raise HTTPException from e(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to improve pipeline: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/explain", response_model=AIExplainResponse)
@@ -99,12 +99,12 @@ def explain_pipeline(
         explanation = AIService.explain_pipeline(request.config)
         return AIExplainResponse(explanation=explanation)
     except ValueError as e:
-        raise HTTPException from e(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
     except Exception as e:
-        raise HTTPException from e(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to explain pipeline: {str(e)}"
-        )
+        ) from e
