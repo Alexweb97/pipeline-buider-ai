@@ -83,6 +83,7 @@ class Pipeline(Base):
     # Relationships
     creator = relationship("User", back_populates="pipelines")
     executions = relationship("PipelineExecution", back_populates="pipeline")
+    dashboards = relationship("Dashboard", back_populates="pipeline", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Pipeline {self.name} ({self.status})>"

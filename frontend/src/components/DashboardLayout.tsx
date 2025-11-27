@@ -37,6 +37,7 @@ import {
   Transform,
   Edit,
   Security as SecurityIcon,
+  BarChart,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
 import { usePipelineStore } from '../stores/pipelineStore';
@@ -95,6 +96,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { text: 'Data Sources', icon: <Storage />, path: '/sources', badge: null, enabled: true },
     { text: 'Transformations', icon: <Transform />, path: '/transformations', badge: null, enabled: true },
     { text: 'Schedules', icon: <Schedule />, path: '/schedules', badge: null, enabled: true },
+    { text: 'Dashboards', icon: <BarChart />, path: '/dashboards', badge: null, enabled: true },
     { text: 'Analytics', icon: <Assessment />, path: '/analytics', badge: null, enabled: true },
     { text: 'Uploads', icon: <CloudUpload />, path: '/uploads', badge: null, enabled: true },
     { text: 'Security', icon: <SecurityIcon />, path: '/security', badge: securityIssuesCount > 0 ? securityIssuesCount.toString() : null, enabled: true },
