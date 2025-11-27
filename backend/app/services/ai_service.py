@@ -4,12 +4,25 @@ Uses OpenAI GPT to generate pipeline configurations from natural language
 """
 import os
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from openai import OpenAI
 from datetime import datetime
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Initialize OpenAI client (lazy initialization)
+_client: Optional[OpenAI] = None
+
+
+def get_openai_client() -> OpenAI:
+    """Get or create OpenAI client instance"""
+    global _client
+    if _client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "OpenAI API key not configured. Please set the OPENAI_API_KEY environment variable."
+            )
+        _client = OpenAI(api_key=api_key)
+    return _client
 
 
 class AIService:
@@ -89,6 +102,7 @@ Rules:
 6. Be specific with module configurations based on user intent"""
 
         try:
+            client = get_openai_client()
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
@@ -156,6 +170,7 @@ Improvement Request:
 Provide the improved pipeline configuration."""
 
         try:
+            client = get_openai_client()
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
@@ -207,6 +222,7 @@ Format your response as:
 {json.dumps(config, indent=2)}"""
 
         try:
+            client = get_openai_client()
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[

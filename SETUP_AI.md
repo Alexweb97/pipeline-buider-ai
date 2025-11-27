@@ -1,5 +1,7 @@
 # Configuration de l'AI Assistant - Setup Rapide
 
+> **Note :** L'application fonctionne normalement sans configuration AI. Cette fonctionnalité est **optionnelle** et ne sera active que si vous configurez une clé API OpenAI.
+
 ## 🚀 Démarrage Rapide
 
 ### 1. Obtenir une clé API OpenAI
