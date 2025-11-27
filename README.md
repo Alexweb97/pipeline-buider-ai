@@ -45,6 +45,7 @@
 ### Why LogiData AI?
 
 - **🎨 Visual Pipeline Builder**: Drag-and-drop interface with React Flow for intuitive pipeline design
+- **🤖 AI-Powered Assistant**: Generate, improve, and explain pipelines using natural language (GPT-4o-mini)
 - **🔐 Enterprise Security**: JWT authentication, RBAC, audit logging, and IP geolocation tracking
 - **📊 Real-time Monitoring**: Live dashboard with performance metrics and security insights
 - **🔄 44+ Pre-built Modules**: Ready-to-use connectors for databases, APIs, cloud storage, and more
@@ -60,6 +61,7 @@
 | Feature | Description |
 |---------|-------------|
 | **🎨 Visual Pipeline Builder** | React Flow-based drag-and-drop interface with real-time validation |
+| **🤖 AI Pipeline Assistant** | Generate pipelines from text, improve existing ones, and get explanations |
 | **📊 Interactive Dashboard** | Comprehensive overview with real-time KPIs and analytics |
 | **🔌 44+ Connectors** | PostgreSQL, MySQL, MongoDB, Redis, S3, REST API, Kafka, and more |
 | **🔄 Advanced Transformations** | Filter, Map, Aggregate, Join, Validate, and Custom transformations |
@@ -160,6 +162,7 @@ Pydantic v2             # Data validation
 JWT + bcrypt            # Secure authentication
 SlowAPI                 # Rate limiting
 httpx                   # Async HTTP client (IP geolocation)
+OpenAI + LangChain      # AI-powered features (optional)
 ```
 
 ### Infrastructure
@@ -270,6 +273,60 @@ docker-compose ps
 - Password: `admin123`
 
 ⚠️ **Important**: Change default credentials in production!
+
+---
+
+## 🤖 AI Pipeline Assistant
+
+LogiData AI includes an **optional** AI-powered assistant that uses OpenAI's GPT-4o-mini to help you create and manage pipelines using natural language.
+
+### Features
+
+- **🚀 Generate Pipelines**: Create complete pipelines from text descriptions
+- **✨ Improve Pipelines**: Enhance existing pipelines with natural language requests
+- **📖 Explain Pipelines**: Get human-readable explanations of what pipelines do
+
+### Quick Setup
+
+```bash
+# 1. Get an OpenAI API key from platform.openai.com
+# 2. Add to backend/.env
+OPENAI_API_KEY=sk-your-key-here
+
+# 3. Restart backend
+docker-compose restart backend
+
+# 4. Open Pipeline Builder and click "AI Assistant"
+```
+
+### Example Usage
+
+**Generate a pipeline:**
+```
+"Create a pipeline that fetches user data from the GitHub API,
+filters repositories with more than 100 stars, and saves to CSV"
+```
+
+**Improve a pipeline:**
+```
+"Add error handling and data validation before loading"
+```
+
+**Explain a pipeline:**
+```
+Click "Explain" to get a plain English description of the pipeline
+```
+
+### Cost
+
+Using GPT-4o-mini is extremely affordable:
+- ~$0.0003 per pipeline generation
+- ~$0.0005 per improvement
+- ~$0.0002 per explanation
+
+**Development costs**: < $1/month for typical usage
+
+> **Note**: The AI Assistant is completely optional. LogiData AI functions fully without it. See [SETUP_AI.md](SETUP_AI.md) and [AI_ASSISTANT_GUIDE.md](AI_ASSISTANT_GUIDE.md) for detailed documentation.
 
 ---
 
@@ -550,6 +607,19 @@ GET    /api/v1/security/statistics         # Security KPIs
 
 </details>
 
+<details>
+<summary><b>AI Assistant (Optional)</b></summary>
+
+```http
+POST   /api/v1/ai/generate        # Generate pipeline from text
+POST   /api/v1/ai/improve         # Improve existing pipeline
+POST   /api/v1/ai/explain         # Explain pipeline in plain English
+```
+
+> **Note**: Requires `OPENAI_API_KEY` in environment
+
+</details>
+
 ### Example: Create Pipeline with Audit
 
 ```bash
@@ -741,6 +811,10 @@ npm run test:e2e
 - [x] IP geolocation for sessions
 - [x] Settings management
 - [x] Docker containerization
+- [x] **AI Pipeline Assistant (GPT-4o-mini integration)**
+  - [x] Natural language pipeline generation
+  - [x] Pipeline improvement suggestions
+  - [x] Plain English pipeline explanations
 
 ### 🔄 Phase 2: Advanced Features (In Progress)
 
@@ -764,15 +838,17 @@ npm run test:e2e
 - [ ] Cost monitoring and optimization
 - [ ] SLA monitoring and alerting
 
-### 🚀 Phase 4: AI & Intelligence (Future)
+### 🚀 Phase 4: AI & Intelligence Enhancements
 
-- [ ] AI-powered pipeline suggestions
+- [x] Natural language pipeline creation (Basic)
+- [ ] Advanced AI pipeline optimization
 - [ ] Auto-optimization based on execution patterns
 - [ ] Anomaly detection in data flows
-- [ ] Natural language pipeline creation
 - [ ] Predictive performance analytics
-- [ ] Smart error recovery
+- [ ] Smart error recovery with AI suggestions
 - [ ] Automated data profiling
+- [ ] AI-powered code generation for custom transformers
+- [ ] Intelligent data quality recommendations
 
 ---
 
