@@ -86,6 +86,9 @@ Pour plus de détails, consultez [AI_ASSISTANT_GUIDE.md](./AI_ASSISTANT_GUIDE.md
 - Vérifiez que votre clé est valide sur platform.openai.com
 - Vérifiez les logs backend : `docker-compose logs backend`
 
+### "OpenAI API key not configured"
+C'est le message attendu si vous n'avez pas configuré de clé API. L'application fonctionne normalement, seules les fonctionnalités AI sont désactivées. Pour activer l'AI Assistant, suivez les étapes ci-dessus pour obtenir et configurer une clé API OpenAI.
+
 ### "Module 'openai' not found"
 ```bash
 cd backend
