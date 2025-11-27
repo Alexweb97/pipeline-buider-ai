@@ -38,7 +38,6 @@ import {
 import { useDashboardStore } from '../stores/dashboardStore';
 import { ChartConfig, ChartType } from '../types/dashboard';
 import DashboardLayout from '../components/DashboardLayout';
-import { v4 as uuidv4 } from 'uuid';
 
 const chartTypes: { value: ChartType; label: string }[] = [
   { value: 'bar', label: 'Bar Chart' },
@@ -108,7 +107,7 @@ export const DashboardEditPage: React.FC = () => {
     }
 
     const chart: ChartConfig = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       type: newChart.type as ChartType,
       title: newChart.title,
       description: newChart.description,
