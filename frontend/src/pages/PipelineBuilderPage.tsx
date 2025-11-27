@@ -41,13 +41,16 @@ import {
   Delete,
   Settings,
   ArrowBack,
+  AutoAwesome,
 } from '@mui/icons-material';
 import { CustomNode } from '../components/nodes/CustomNode';
 import { ModulePalette } from '../components/ModulePalette';
 import { NodeConfigPanel } from '../components/NodeConfigPanel';
 import NodePreviewModal from '../components/NodePreviewModal';
+import AIAssistantModal from '../components/AIAssistantModal';
 import { PipelineNode, ModuleDefinition, PipelineSaveData } from '../types/pipelineBuilder';
 import { apiClient } from '../api/client';
+import { PipelineConfig } from '../api/ai';
 
 const nodeTypes = {
   extractor: CustomNode,
@@ -71,6 +74,7 @@ const PipelineBuilderContent: React.FC = () => {
   const [previewNode, setPreviewNode] = useState<PipelineNode | null>(null);
   const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   // Create a stable reference for handleNodePreview to avoid infinite loops
   const handleNodePreviewRef = useRef<(nodeId: string) => void>(() => {});
@@ -325,6 +329,29 @@ const PipelineBuilderContent: React.FC = () => {
     alert('Pipeline execution started!');
   };
 
+  // Handle AI-generated pipeline
+  const handleAIGenerated = useCallback((config: PipelineConfig) => {
+    console.log('AI generated config:', config);
+
+    // Set pipeline metadata
+    setPipelineName(config.name);
+    setPipelineDescription(config.description);
+    setPipelineType(config.type as 'etl' | 'elt' | 'streaming');
+
+    // Add onPreview callback to nodes
+    const nodesWithPreview = config.nodes.map((node: any) => ({
+      ...node,
+      data: {
+        ...node.data,
+        onPreview: handleNodePreviewRef.current,
+      },
+    }));
+
+    // Update canvas
+    setNodes(nodesWithPreview);
+    setEdges(config.edges);
+  }, [setNodes, setEdges]);
+
   // Show loading state while pipeline is being loaded
   if (loading) {
     return (
@@ -376,6 +403,16 @@ const PipelineBuilderContent: React.FC = () => {
             sx={{ mr: 3 }}
           />
 
+          <Button
+            variant="outlined"
+            startIcon={<AutoAwesome />}
+            size="small"
+            onClick={() => setAiModalOpen(true)}
+            sx={{ mr: 1 }}
+            color="primary"
+          >
+            AI Assistant
+          </Button>
           <Button
             variant="outlined"
             startIcon={<Settings />}
@@ -529,6 +566,14 @@ const PipelineBuilderContent: React.FC = () => {
           edges={edges}
         />
       )}
+
+      {/* AI Assistant Modal */}
+      <AIAssistantModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        onPipelineGenerated={handleAIGenerated}
+        currentConfig={nodes.length > 0 ? { nodes, edges, type: pipelineType } : undefined}
+      />
     </Box>
   );
 };
