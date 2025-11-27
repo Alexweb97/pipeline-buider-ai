@@ -149,6 +149,8 @@ export const DashboardEditPage: React.FC = () => {
           refreshInterval: dashboardInfo.refreshInterval,
         },
       });
+      // Reload the dashboard to get fresh data
+      await fetchDashboard(dashboardId);
       navigate(`/dashboards/${dashboardId}`);
     } catch (err) {
       console.error('Failed to update dashboard:', err);

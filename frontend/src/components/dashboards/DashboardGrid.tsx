@@ -6,6 +6,8 @@ import React from 'react';
 import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { Box, Card, CardContent, Typography, useTheme, alpha } from '@mui/material';
+import { Dashboard as DashboardIcon } from '@mui/icons-material';
 import { Dashboard, ChartConfig } from '../../types/dashboard';
 import { ChartRenderer } from '../charts/ChartRenderer';
 
@@ -24,6 +26,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
   editable = false,
   onLayoutChange,
 }) => {
+  const theme = useTheme();
   const { config, layout } = dashboard;
   const charts = config.charts || [];
 
@@ -48,7 +51,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <Box sx={{ width: '100%' }}>
       <ResponsiveGridLayout
         className="layout"
         layouts={layouts}
@@ -61,37 +64,63 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
         draggableHandle=".drag-handle"
       >
         {charts.map((chart: ChartConfig) => (
-          <div
-            key={chart.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 overflow-hidden"
-          >
-            {editable && (
-              <div className="drag-handle cursor-move bg-gray-100 -mx-4 -mt-4 mb-2 px-4 py-2 border-b border-gray-200">
-                <span className="text-xs text-gray-500">☰ Drag to move</span>
-              </div>
-            )}
-            <ChartRenderer
-              type={chart.type}
-              data={dashboardData[chart.id] || []}
-              config={chart}
-              height={250}
-            />
+          <div key={chart.id}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {editable && (
+                <Box
+                  className="drag-handle"
+                  sx={{
+                    cursor: 'move',
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    px: 2,
+                    py: 1,
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    ☰ Drag to move
+                  </Typography>
+                </Box>
+              )}
+              <CardContent sx={{ flex: 1, overflow: 'hidden', p: 2 }}>
+                <ChartRenderer
+                  type={chart.type}
+                  data={dashboardData[chart.id] || []}
+                  config={chart}
+                  height={250}
+                />
+              </CardContent>
+            </Card>
           </div>
         ))}
       </ResponsiveGridLayout>
 
       {charts.length === 0 && (
-        <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <div className="text-center">
-            <p className="text-gray-500 mb-2">No charts configured</p>
-            {editable && (
-              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                + Add Chart
-              </button>
-            )}
-          </div>
-        </div>
+        <Card
+          elevation={0}
+          sx={{
+            border: `2px dashed ${theme.palette.divider}`,
+            bgcolor: alpha(theme.palette.primary.main, 0.02),
+            textAlign: 'center',
+            py: 8,
+          }}
+        >
+          <DashboardIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No charts configured
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Add charts to your dashboard to start visualizing data
+          </Typography>
+        </Card>
       )}
-    </div>
+    </Box>
   );
 };
