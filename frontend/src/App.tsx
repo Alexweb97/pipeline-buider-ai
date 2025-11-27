@@ -24,6 +24,7 @@ import { PipelineBuilderPage } from './pages/PipelineBuilderPage';
 import TestModulesPage from './pages/TestModules';
 import { DashboardsPage } from './pages/DashboardsPage';
 import { DashboardViewPage } from './pages/DashboardViewPage';
+import { DashboardEditPage } from './pages/DashboardEditPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create modern theme
@@ -304,6 +305,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardViewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboards/:dashboardId/edit"
+              element={
+                <ProtectedRoute>
+                  <DashboardEditPage />
                 </ProtectedRoute>
               }
             />
